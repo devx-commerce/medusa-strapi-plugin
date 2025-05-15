@@ -8,7 +8,7 @@
   </a>
 </p>
 <h1 align="center">
-  Medusa Plugin Starter
+  Medusa Plugin - Strapi
 </h1>
 
 <h4 align="center">
@@ -17,7 +17,7 @@
 </h4>
 
 <p align="center">
-  Building blocks for digital commerce
+  A plugin for implementing Strapi as CMS for Medusa
 </p>
 <p align="center">
   <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
@@ -32,33 +32,29 @@
   </a>
 </p>
 
-## Compatibility
+## Features
 
-This starter is compatible with versions >= 2.4.0 of `@medusajs/medusa`. 
+<!-- - 🔐 Phone number based authentication
+- 📱 Multiple SMS provider support (Gupshup and AWS SNS)
+- 🔄 Fallback provider configuration with priority settings
+- 🔢 Secure verification code generation and validation
+- ⏱️ Rate limiting with maximum attempt controls
+- ⏳ Code expiration management
+- 🔌 Easy integration with existing Medusa stores -->
 
-## Getting Started
+This plugin requires:
 
-Visit the [Quickstart Guide](https://docs.medusajs.com/learn/installation) to set up a server.
+- [Medusa backend](https://docs.medusajs.com/development/backend/install)
+- [Medusa framework](https://docs.medusajs.com/) version >= 2.4.0
 
-Visit the [Plugins documentation](https://docs.medusajs.com/learn/fundamentals/plugins) to learn more about plugins and how to create them.
+## Installation
 
-Visit the [Docs](https://docs.medusajs.com/learn/installation#get-started) to learn more about our system requirements.
+1. Install the plugin:
 
-## What is Medusa
+```bash
+npm install @devx-commerce/strapi
+# or
+yarn add @devx-commerce/strapi
+```
 
-Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
-
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/introduction/architecture) and [commerce modules](https://docs.medusajs.com/learn/fundamentals/modules/commerce-modules) in the Docs.
-
-## Community & Contributions
-
-The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
-
-Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
-
-## Other channels
-
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+2. Add the plugin to your `medusa-config.js`:
