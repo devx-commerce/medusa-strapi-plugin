@@ -17,7 +17,7 @@
 </h4>
 
 <p align="center">
-  A plugin for implementing passwordless authentication in Medusa using SMS verification codes with multiple provider support
+  A plugin for implementing Strapi as CMS for Medusa
 </p>
 <p align="center">
   <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
