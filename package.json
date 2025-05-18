@@ -1,5 +1,5 @@
 {
-  "name": "plugin-strapi",
+  "name": "@devx-commerce/strapi",
   "version": "0.0.1",
   "description": "Medusa plugin for Strapi",
   "author": "devx commerce (https://devxcommerce.com)",
@@ -22,7 +22,8 @@
     "medusa-plugin",
     "medusa-v2",
     "medusa-plugin-strapi",
-    "strapi"
+    "strapi",
+    "medusa-plugin-cms"
   ],
   "scripts": {
     "build": "medusa plugin:build",
@@ -33,10 +34,10 @@
     "@medusajs/admin-sdk": "2.4.0",
     "@medusajs/cli": "2.4.0",
     "@medusajs/framework": "2.4.0",
+    "@medusajs/icons": "2.4.0",
     "@medusajs/medusa": "2.4.0",
     "@medusajs/test-utils": "2.4.0",
     "@medusajs/ui": "4.0.4",
-    "@medusajs/icons": "2.4.0",
     "@mikro-orm/cli": "6.4.3",
     "@mikro-orm/core": "6.4.3",
     "@mikro-orm/knex": "6.4.3",
@@ -60,10 +61,10 @@
     "@medusajs/admin-sdk": "2.4.0",
     "@medusajs/cli": "2.4.0",
     "@medusajs/framework": "2.4.0",
-    "@medusajs/test-utils": "2.4.0",
-    "@medusajs/medusa": "2.4.0",
-    "@medusajs/ui": "4.0.3",
     "@medusajs/icons": "2.4.0",
+    "@medusajs/medusa": "2.4.0",
+    "@medusajs/test-utils": "2.4.0",
+    "@medusajs/ui": "4.0.3",
     "@mikro-orm/cli": "6.4.3",
     "@mikro-orm/core": "6.4.3",
     "@mikro-orm/knex": "6.4.3",
@@ -74,5 +75,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@strapi/client": "^1.4.0"
   }
 }
