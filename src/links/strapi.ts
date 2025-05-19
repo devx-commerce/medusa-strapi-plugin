@@ -11,7 +11,7 @@ export default defineLink(
     linkable: {
       serviceName: STRAPI_MODULE,
       alias: "cms",
-      primaryKey: "productId",
+      primaryKey: "systemId",
     },
   },
   {

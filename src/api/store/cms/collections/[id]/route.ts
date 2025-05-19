@@ -8,12 +8,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve("query");
 
   const { data } = await query.graph({
-    entity: "product",
+    entity: "product_collection",
     fields: [...((fields as string) || "").split(","), "cms.*"],
     filters: { id },
     context: {
       cms: QueryContext({
-        collection: "product",
+        collection: "collection",
         locale,
         populate:
           typeof populate === "string" && populate
@@ -23,5 +23,5 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     },
   });
 
-  res.json({ product: data[0] });
+  res.json({ collection: data[0] });
 };
