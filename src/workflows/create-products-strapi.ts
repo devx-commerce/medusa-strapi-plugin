@@ -15,7 +15,7 @@ export const createProductsStrapiWorkflow = createWorkflow(
   (input: WorkflowInput) => {
     const { data } = useQueryGraphStep({
       entity: "product",
-      fields: ["id", "title", "status", "handle", "variants.*"],
+      fields: ["id", "title", "type", "status", "handle", "variants.*"],
       filters: {
         id: input.product_ids,
       },

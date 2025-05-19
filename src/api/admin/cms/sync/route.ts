@@ -5,14 +5,22 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const entityTypes = ["products", "collections", "categories"];
 
-  for (const type of entityTypes) {
-    await eventService.emit({
-      name: `strapi-${type}.sync`,
-      data: {},
+  try {
+    await Promise.all(
+      entityTypes.map((type) =>
+        eventService.emit({
+          name: `strapi-${type}.sync`,
+          data: {},
+        }),
+      ),
+    );
+
+    res.status(200).json({
+      message: "Strapi sync triggered successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Failed to trigger Strapi sync: ${error.message}`,
     });
   }
-
-  res.status(200).json({
-    message: "Strapi sync triggered successfully",
-  });
 };

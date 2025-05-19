@@ -238,7 +238,7 @@ export default class StrapiModuleService {
       COLLECTION_COLLECTION_NAME,
     );
 
-    // check if product variant already exists
+    // check if collection already exists
     let {
       data: [collectionEntry],
     } = await collectionCollection.find({
@@ -299,23 +299,15 @@ export default class StrapiModuleService {
       CATEGORY_COLLECTION_NAME,
     );
 
-    // check if product variant already exists
-    const { data: categoryEntries } = await categoryCollection.find({
+    // check if category already exists
+    const {
+      data: [categoryEntry],
+    } = await categoryCollection.find({
       filters: {
-        systemId: {
-          $in: [category.id, category.parent_category_id].filter(Boolean),
-        },
+        systemId: category.id,
       },
       status: "draft",
     });
-
-    const categoryEntry = categoryEntries.find(
-      (c) => c.systemId === category.id,
-    );
-
-    const parentEntry = categoryEntries.find(
-      (c) => c.systemId === category.parent_category_id,
-    );
 
     if (!categoryEntry) {
       const { data: newCategoryEntry } = await categoryCollection.create(
@@ -323,7 +315,6 @@ export default class StrapiModuleService {
           systemId: category.id,
           title: category.name || "",
           handle: category.handle || "",
-          parent: parentEntry?.documentId,
         },
         {
           locale: this.options.default_locale,

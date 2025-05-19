@@ -15,7 +15,7 @@ export const createCategoriesStrapiWorkflow = createWorkflow(
   (input: WorkflowInput) => {
     const { data } = useQueryGraphStep({
       entity: "product_category",
-      fields: ["id", "name", "handle", "parent_category_id"],
+      fields: ["id", "name", "handle"],
       filters: {
         id: input.category_ids,
       },
