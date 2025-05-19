@@ -9,6 +9,7 @@ export default async function handleProductCreate({
   container,
 }: SubscriberArgs<{ id: string }>) {
   const logger = container.resolve("logger");
+
   await createProductsStrapiWorkflow(container).run({
     input: {
       product_ids: [data.id],

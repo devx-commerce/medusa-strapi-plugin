@@ -40,6 +40,21 @@ export default class StrapiModuleService {
     };
   }
 
+  async getProductBySystemId(systemId: string) {
+    const productCollection = this.strapiClient.collection(
+      PRODUCT_COLLECTION_NAME,
+    );
+    const {
+      data: [product],
+    } = await productCollection.find({
+      filters: { systemId },
+      fields: ["documentId"],
+      status: "draft",
+    });
+
+    return product;
+  }
+
   async list(filter: {
     systemId: string | string[];
     context?: {
@@ -74,24 +89,6 @@ export default class StrapiModuleService {
 
     return entries;
   }
-
-  // async verifyWebhook(request: CanonicalRequest) {
-  //   if (!this.options.webhook_secret) {
-  //     throw new MedusaError(
-  //       MedusaError.Types.INVALID_DATA,
-  //       "Webhook secret is not set",
-  //     );
-  //   }
-  //   return verifyRequest(this.options.webhook_secret, request, 0);
-  // }
-
-  // async getLocales() {
-  //   return await this.managementClient.locale.getMany({});
-  // }
-
-  // async getDefaultLocaleCode() {
-  //   return this.options.default_locale;
-  // }
 
   async createProduct(product: ProductDTO) {
     const productsCollection = this.strapiClient.collection(
@@ -170,7 +167,7 @@ export default class StrapiModuleService {
     }
   }
 
-  private async createProductVariant(
+  async createProductVariant(
     variants: ProductVariantDTO[],
     productEntry: EntryProps,
   ) {

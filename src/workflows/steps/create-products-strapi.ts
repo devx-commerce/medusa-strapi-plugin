@@ -5,7 +5,7 @@ import StrapiModuleService from "../../modules/strapi/service";
 
 type EntryProps = {
   documentId: string;
-  productId: string;
+  systemId: string;
 };
 
 type StepInput = {
@@ -46,7 +46,7 @@ export const createProductsStrapiStep = createStep(
       container.resolve(STRAPI_MODULE);
 
     for (const product of products) {
-      await strapiModuleService.deleteProduct(product.productId);
+      await strapiModuleService.deleteProduct(product.systemId);
     }
   },
 );
