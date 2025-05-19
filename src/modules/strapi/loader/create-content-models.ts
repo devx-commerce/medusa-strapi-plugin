@@ -31,10 +31,10 @@ export default async function syncContentModelsLoader({
     try {
       const products = client.collection("products");
       await products.find({
-        fields: ["title", "productId"],
+        fields: ["title", "systemId"],
         populate: {
           productVarinats: {
-            fields: ["variantId", "title"],
+            fields: ["title", "systemId"],
           },
         },
         pagination: {
