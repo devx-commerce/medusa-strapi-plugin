@@ -35,7 +35,7 @@ This plugin requires:
 
 - [Medusa backend](https://docs.medusajs.com/development/backend/install)
 - [Medusa framework](https://docs.medusajs.com/) version >= 2.4.0
-- [Strapi](https://strapi.io/documentation/developer-docs/latest/getting-started/introduction.html) version >= 4.0.0
+- [Strapi v5](https://strapi.io/documentation/developer-docs/latest/getting-started/introduction.html)
 
 ## Installation
 
