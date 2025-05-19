@@ -43,7 +43,7 @@ export default class StrapiModuleService {
   async list(filter: {
     productId: string | string[];
     context?: {
-      collection?: "collection" | "product" | "category";
+      entity?: "collection" | "product" | "category";
       locale?: string;
       populate?: string;
     };
@@ -51,10 +51,10 @@ export default class StrapiModuleService {
     this.logger.log(JSON.stringify(filter));
 
     let collectionName = PRODUCT_COLLECTION_NAME;
-    if (filter.context?.collection === "collection") {
+    if (filter.context?.entity === "collection") {
       collectionName = COLLECTION_COLLECTION_NAME;
     }
-    if (filter.context?.collection === "category") {
+    if (filter.context?.entity === "category") {
       collectionName = CATEGORY_COLLECTION_NAME;
     }
 

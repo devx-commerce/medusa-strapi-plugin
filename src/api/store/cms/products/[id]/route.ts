@@ -1,9 +1,17 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { QueryContext } from "@medusajs/framework/utils";
 
-export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+type CMSBody = {
+  populate: string | string[] | Record<string, unknown> | undefined;
+};
+
+export const POST = async (
+  req: MedusaRequest<CMSBody>,
+  res: MedusaResponse,
+) => {
   const { id } = req.params;
-  const { locale, populate, fields } = req.query;
+  const { locale, fields } = req.query;
+  const { populate } = req.body;
 
   const query = req.scope.resolve("query");
 
@@ -13,12 +21,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     filters: { id },
     context: {
       cms: QueryContext({
-        collection: "product",
+        entity: "product",
         locale,
-        populate:
-          typeof populate === "string" && populate
-            ? JSON.parse(populate)
-            : undefined,
+        populate,
       }),
     },
   });
