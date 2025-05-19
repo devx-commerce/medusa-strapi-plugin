@@ -33,7 +33,7 @@ export default async function syncContentModelsLoader({
       await products.find({
         fields: ["title", "systemId"],
         populate: {
-          productVarinats: {
+          variants: {
             fields: ["title", "systemId"],
           },
         },
