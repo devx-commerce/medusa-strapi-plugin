@@ -2,6 +2,8 @@ import {
   Logger,
   ProductDTO,
   ProductVariantDTO,
+  ProductCollectionDTO,
+  ProductCategoryDTO,
 } from "@medusajs/framework/types";
 import { MedusaError } from "@medusajs/framework/utils";
 import { StrapiClient } from "@strapi/client";
@@ -18,18 +20,20 @@ type EntryProps = {
 
 const PRODUCT_COLLECTION_NAME = "products";
 const VARIANT_COLLECTION_NAME = "product-variants";
+const CATEGORY_COLLECTION_NAME = "categories";
+const COLLECTION_COLLECTION_NAME = "collections";
 
 export default class StrapiModuleService {
   private strapiClient: StrapiClient;
   private options: ModuleOptions;
-  protected logger_: Logger;
+  protected logger: Logger;
 
   constructor(
     { strapiClient, logger }: InjectedDependencies,
     options: ModuleOptions,
   ) {
     this.strapiClient = strapiClient;
-    this.logger_ = logger;
+    this.logger = logger;
     this.options = {
       ...options,
       default_locale: options.default_locale || "en",
@@ -39,27 +43,36 @@ export default class StrapiModuleService {
   async list(filter: {
     productId: string | string[];
     context?: {
+      entity?: "collection" | "product" | "category";
       locale?: string;
       populate?: string;
     };
   }) {
-    const productIdFilter = Array.isArray(filter.productId)
+    this.logger.log(JSON.stringify(filter));
+
+    let collectionName = PRODUCT_COLLECTION_NAME;
+    if (filter.context?.entity === "collection") {
+      collectionName = COLLECTION_COLLECTION_NAME;
+    }
+    if (filter.context?.entity === "category") {
+      collectionName = CATEGORY_COLLECTION_NAME;
+    }
+
+    const systemIdFilter = Array.isArray(filter.productId)
       ? filter.productId
       : [filter.productId];
 
-    const productsCollection = this.strapiClient.collection(
-      PRODUCT_COLLECTION_NAME,
-    );
+    const collection = this.strapiClient.collection(collectionName);
 
-    const { data: products } = await productsCollection.find({
+    const { data: entries } = await collection.find({
       filters: {
-        productId: { $in: productIdFilter },
+        systemId: { $in: systemIdFilter },
       },
       locale: filter.context?.locale || this.options.default_locale,
       populate: filter.context?.populate,
     });
 
-    return products;
+    return entries;
   }
 
   // async verifyWebhook(request: CanonicalRequest) {
@@ -90,7 +103,7 @@ export default class StrapiModuleService {
       data: [productEntry],
     } = await productsCollection.find({
       filters: {
-        productId: product.id,
+        systemId: product.id,
       },
       status: "draft",
     });
@@ -98,7 +111,7 @@ export default class StrapiModuleService {
     if (!productEntry) {
       ({ data: productEntry } = await productsCollection.create(
         {
-          productId: product.id,
+          systemId: product.id,
           title: product.title || "",
           handle: product.handle || "",
           productType: product.type || "",
@@ -131,13 +144,13 @@ export default class StrapiModuleService {
       const {
         data: [productEntry],
       } = await productsCollection.find({
-        filters: { productId },
+        filters: { systemId: productId },
         populate: "variants",
         status: "draft",
       });
 
       if (!productEntry) {
-        this.logger_.log("No product found in Strapi");
+        this.logger.log("No product found in Strapi");
         return;
       }
 
@@ -169,7 +182,7 @@ export default class StrapiModuleService {
         data: [productVariantEntry],
       } = await productVariantsCollection.find({
         filters: {
-          variantId: variant.id,
+          systemId: variant.id,
         },
         status: "draft",
       });
@@ -177,7 +190,7 @@ export default class StrapiModuleService {
       if (!productVariantEntry) {
         await productVariantsCollection.create(
           {
-            variantId: variant.id,
+            systemId: variant.id,
             title: variant.title || "",
             product: productEntry.documentId,
             sku: variant.sku,
@@ -200,12 +213,12 @@ export default class StrapiModuleService {
       const {
         data: [productVariantEntry],
       } = await productVariantsCollection.find({
-        filters: { variantId },
+        filters: { systemId: variantId },
         status: "draft",
       });
 
       if (!productVariantEntry) {
-        this.logger_.log("No product variant found in Strapi");
+        this.logger.log("No product variant found in Strapi");
         return;
       }
 
@@ -214,6 +227,129 @@ export default class StrapiModuleService {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
         `Failed to delete product variant from Strapi: ${error.message}`,
+      );
+    }
+  }
+
+  async createCollection(collection: ProductCollectionDTO) {
+    const collectionCollection = this.strapiClient.collection(
+      COLLECTION_COLLECTION_NAME,
+    );
+
+    // check if product variant already exists
+    const {
+      data: [collectionEntry],
+    } = await collectionCollection.find({
+      filters: {
+        systemId: collection.id,
+      },
+      status: "draft",
+    });
+
+    if (!collectionEntry) {
+      await collectionCollection.create(
+        {
+          systemId: collection.id,
+          title: collection.title || "",
+          handle: collection.handle || "",
+        },
+        {
+          locale: this.options.default_locale,
+          status: "draft",
+        },
+      );
+    }
+  }
+
+  async deleteCollection(collectionId: string) {
+    const collectionCollection = this.strapiClient.collection(
+      COLLECTION_COLLECTION_NAME,
+    );
+
+    try {
+      const {
+        data: [collectionEntry],
+      } = await collectionCollection.find({
+        filters: { systemId: collectionId },
+        status: "draft",
+      });
+
+      if (!collectionEntry) {
+        this.logger.log("No collection found in Strapi");
+        return;
+      }
+
+      await collectionCollection.delete(collectionEntry.documentId);
+    } catch (error) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Failed to delete collection from Strapi: ${error.message}`,
+      );
+    }
+  }
+
+  async createCategory(category: ProductCategoryDTO) {
+    const categoryCollection = this.strapiClient.collection(
+      CATEGORY_COLLECTION_NAME,
+    );
+
+    // check if product variant already exists
+    const { data: categoryEntries } = await categoryCollection.find({
+      filters: {
+        systemId: {
+          $in: [category.id, category.parent_category_id].filter(Boolean),
+        },
+      },
+      status: "draft",
+    });
+
+    const categoryEntry = categoryEntries.find(
+      (c) => c.systemId === category.id,
+    );
+
+    const parentEntry = categoryEntries.find(
+      (c) => c.systemId === category.parent_category_id,
+    );
+
+    if (!categoryEntry) {
+      await categoryCollection.create(
+        {
+          systemId: category.id,
+          title: category.name || "",
+          handle: category.handle || "",
+          parent: parentEntry?.documentId,
+        },
+        {
+          locale: this.options.default_locale,
+          status: "draft",
+        },
+      );
+    }
+  }
+
+  async deleteCategory(categoryId: string) {
+    const categoryCollection = this.strapiClient.collection(
+      CATEGORY_COLLECTION_NAME,
+    );
+
+    try {
+      const {
+        data: [categoryEntry],
+      } = await categoryCollection.find({
+        filters: { systemId: categoryId },
+        status: "draft",
+      });
+
+      if (!categoryEntry) {
+        this.logger.log("No category found in Strapi");
+        return;
+      }
+
+      await categoryCollection.delete(categoryEntry.documentId);
+    } catch (error) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Failed to delete category from Strapi: ${error.message}`,
       );
     }
   }

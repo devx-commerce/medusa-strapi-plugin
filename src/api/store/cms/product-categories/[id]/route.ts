@@ -16,17 +16,17 @@ export const POST = async (
   const query = req.scope.resolve("query");
 
   const { data } = await query.graph({
-    entity: "product",
+    entity: "product_category",
     fields: [...((fields as string) || "").split(","), "cms.*"],
     filters: { id },
     context: {
       cms: QueryContext({
-        entity: "product",
+        entity: "category",
         locale,
         populate,
       }),
     },
   });
 
-  res.json({ product: data[0] });
+  res.json({ category: data[0] });
 };

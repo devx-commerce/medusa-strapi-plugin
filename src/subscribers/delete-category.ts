@@ -1,0 +1,23 @@
+import {
+  type SubscriberArgs,
+  type SubscriberConfig,
+} from "@medusajs/framework";
+import { deleteCategoriesStrapiWorkflow } from "../workflows/delete-categories-strapi";
+
+export default async function handleCategoryDelete({
+  event: { data },
+  container,
+}: SubscriberArgs<{ id: string }>) {
+  const logger = container.resolve("logger");
+  await deleteCategoriesStrapiWorkflow(container).run({
+    input: {
+      category_ids: [data.id],
+    },
+  });
+
+  logger.log("Category deleted in Strapi");
+}
+
+export const config: SubscriberConfig = {
+  event: "product-category.deleted",
+};

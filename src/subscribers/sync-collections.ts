@@ -1,8 +1,8 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
-import { createProductsStrapiWorkflow } from "../workflows/create-products-strapi";
+import { createCollectionsStrapiWorkflow } from "../workflows/create-collections-strapi";
 
-export default async function syncProductsHandler({
+export default async function syncCollectionsHandler({
   container,
 }: SubscriberArgs<Record<string, unknown>>) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
@@ -14,8 +14,8 @@ export default async function syncProductsHandler({
   let totalCount = 0;
 
   while (hasMore) {
-    const { data: products, metadata: { count } = {} } = await query.graph({
-      entity: "product",
+    const { data: collections, metadata: { count } = {} } = await query.graph({
+      entity: "product_collection",
       fields: ["id"],
       pagination: {
         skip: offset,
@@ -23,22 +23,22 @@ export default async function syncProductsHandler({
       },
     });
 
-    if (products.length) {
-      await createProductsStrapiWorkflow(container).run({
+    if (collections.length) {
+      await createCollectionsStrapiWorkflow(container).run({
         input: {
-          product_ids: products.map((product) => product.id),
+          collection_ids: collections.map((collection) => collection.id),
         },
       });
     }
 
-    hasMore = products.length === batchSize;
+    hasMore = collections.length === batchSize;
     offset += batchSize;
     totalCount = count ?? 0;
   }
 
-  logger.log(`Synced ${totalCount} products to Strapi`);
+  logger.log(`Synced ${totalCount} collections to Strapi`);
 }
 
 export const config: SubscriberConfig = {
-  event: "strapi-products.sync",
+  event: "strapi-collections.sync",
 };
