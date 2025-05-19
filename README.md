@@ -19,33 +19,23 @@
 <p align="center">
   A plugin for implementing Strapi as CMS for Medusa
 </p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
 
 ## Features
 
-<!-- - 🔐 Phone number based authentication
-- 📱 Multiple SMS provider support (Gupshup and AWS SNS)
-- 🔄 Fallback provider configuration with priority settings
-- 🔢 Secure verification code generation and validation
-- ⏱️ Rate limiting with maximum attempt controls
-- ⏳ Code expiration management
-- 🔌 Easy integration with existing Medusa stores -->
+- 🔄 Seamless integration between Medusa and Strapi
+- 📝 Flexible content management for your e-commerce store
+- 🖼️ Rich media management for product images and assets
+- 🚀 Extend product information with custom fields and content
+- 📱 Headless architecture for omnichannel commerce
+- 🔄 Automatic synchronization between Medusa and Strapi
+
+## Requirements
 
 This plugin requires:
 
 - [Medusa backend](https://docs.medusajs.com/development/backend/install)
 - [Medusa framework](https://docs.medusajs.com/) version >= 2.4.0
+- [Strapi](https://strapi.io/documentation/developer-docs/latest/getting-started/introduction.html) version >= 4.0.0
 
 ## Installation
 
@@ -58,3 +48,78 @@ yarn add @devx-commerce/strapi
 ```
 
 2. Add the plugin to your `medusa-config.js`:
+
+```js
+const plugins = [
+  // ... other plugins
+  {
+    resolve: "@devx-commerce/strapi",
+    options: {
+      base_url: process.env.STRAPI_URL || "http://localhost:1337",
+      token: process.env.STRAPI_API_KEY,
+    }
+  }
+]
+
+module.exports = {
+  plugins,
+  // ... rest of your config
+}
+```
+
+## Setup
+
+### Setting up Strapi
+
+1. Install Strapi if you haven't already:
+
+```bash
+npx create-strapi-app@latest my-strapi-cms
+```
+
+2. Start your Strapi server:
+
+```bash
+cd my-strapi-cms
+npm run develop
+```
+
+3. Create an API token in Strapi:
+   - Go to Settings > API Tokens
+   - Create a new full access token
+   - Copy the token to use in your Medusa configuration
+
+4. Configure environment variables for your Medusa backend:
+
+```
+STRAPI_URL=http://localhost:1337
+STRAPI_API_KEY=your-api-token-here
+```
+
+### Synchronizing data
+
+After installation and setup, the plugin will automatically:
+
+- Create and update products, collection & categories in Strapi when they are modified in Medusa
+- Sync product, collection & categories metadata between Medusa and Strapi
+- Allow extending product data with Strapi's content types
+
+## Usage
+
+Once the plugin is set up, you can use Strapi's admin panel to add rich content to your products and use the Strapi API to fetch this content for your storefront.
+
+Example of fetching product content from Strapi:
+
+```js
+// In your storefront
+async function getProductContent(productId) {
+  const response = await fetch(`${MEDUSA_BASE_URL}/store/cms/products/${productId}`, {
+    body: JSON.stringify({ populate: { variants: { fields: "*" } } }),
+    header: {
+      "x-publishable-api-key": ${STOREFRONT_PUBLISHABLE_API_KEY}
+    }
+  });
+  const data = await response.json();
+  return data.data[0];
+}
+```
