@@ -41,7 +41,7 @@ export default class StrapiModuleService {
   }
 
   async list(filter: {
-    productId: string | string[];
+    systemId: string | string[];
     context?: {
       entity?: "collection" | "product" | "category";
       locale?: string;
@@ -58,9 +58,9 @@ export default class StrapiModuleService {
       collectionName = CATEGORY_COLLECTION_NAME;
     }
 
-    const systemIdFilter = Array.isArray(filter.productId)
-      ? filter.productId
-      : [filter.productId];
+    const systemIdFilter = Array.isArray(filter.systemId)
+      ? filter.systemId
+      : [filter.systemId];
 
     const collection = this.strapiClient.collection(collectionName);
 
