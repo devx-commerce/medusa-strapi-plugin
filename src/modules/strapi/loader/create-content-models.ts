@@ -44,6 +44,7 @@ export default async function syncContentModelsLoader({
       });
     } catch (error) {
       logger.error(`Failed to connect to Strapi, Schema not ready: ${error}`);
+      throw error;
     }
 
     container.register({ strapiClient: asValue(client) });

@@ -12,21 +12,34 @@ export const GET = async (req: MedusaRequest<CMSBody>, res: MedusaResponse) => {
 
   const query = req.scope.resolve("query");
 
-  const { data } = await query.graph({
-    entity: "product_category",
-    fields: [
-      ...((fields as string) || "*").split(",").map((f) => f.trim()),
-      "cms.*",
-    ],
-    filters: { id },
-    context: {
-      cms: QueryContext({
-        entity: "category",
-        locale,
-        populate,
-      }),
-    },
-  });
+  try {
+    const { data } = await query.graph({
+      entity: "product_category",
+      fields: [
+        ...(fields
+          ? (fields as string).split(",").map((f) => f.trim())
+          : ["*"]),
+        "cms.*",
+      ],
+      filters: { id },
+      context: {
+        cms: QueryContext({
+          entity: "category",
+          locale,
+          populate,
+        }),
+      },
+    });
 
-  res.json({ category: data[0] });
+    if (!data.length) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    res.json({ category: data[0] });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while fetching the category",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
 };

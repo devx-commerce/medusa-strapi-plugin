@@ -9,13 +9,20 @@ export default async function handleCategoryDelete({
   container,
 }: SubscriberArgs<{ id: string }>) {
   const logger = container.resolve("logger");
-  await deleteCategoriesStrapiWorkflow(container).run({
-    input: {
-      category_ids: [data.id],
-    },
-  });
+  logger.log(`Deleting category ${data.id} in Strapi`);
 
-  logger.log("Category deleted in Strapi");
+  try {
+    await deleteCategoriesStrapiWorkflow(container).run({
+      input: {
+        category_ids: [data.id],
+      },
+    });
+
+    logger.log("Category deleted in Strapi");
+  } catch (error) {
+    logger.error(`Failed to delete category in Strapi: ${error.message}`);
+    throw error;
+  }
 }
 
 export const config: SubscriberConfig = {

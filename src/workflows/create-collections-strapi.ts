@@ -13,7 +13,6 @@ type WorkflowInput = {
 export const createCollectionsStrapiWorkflow = createWorkflow(
   { name: "create-collection-strapi-workflow" },
   (input: WorkflowInput) => {
-    // @ts-ignore
     const { data } = useQueryGraphStep({
       entity: "product_collection",
       fields: ["id", "title", "handle"],

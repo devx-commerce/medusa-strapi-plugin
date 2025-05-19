@@ -48,7 +48,7 @@ export default class StrapiModuleService {
       populate?: string;
     };
   }) {
-    this.logger.log(JSON.stringify(filter));
+    this.logger.debug(JSON.stringify(filter));
 
     let collectionName = PRODUCT_COLLECTION_NAME;
     if (filter.context?.entity === "collection") {
@@ -157,9 +157,11 @@ export default class StrapiModuleService {
       await productsCollection.delete(productEntry.documentId);
 
       // Delete the product variant entries
-      for (const variant of productEntry.variants) {
-        await productVariantsCollection.delete(variant.documentId);
-      }
+      await Promise.all(
+        productEntry.variants.map((v: EntryProps) =>
+          productVariantsCollection.delete(v.documentId),
+        ),
+      );
     } catch (error) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
@@ -237,7 +239,7 @@ export default class StrapiModuleService {
     );
 
     // check if product variant already exists
-    const {
+    let {
       data: [collectionEntry],
     } = await collectionCollection.find({
       filters: {
@@ -247,7 +249,7 @@ export default class StrapiModuleService {
     });
 
     if (!collectionEntry) {
-      await collectionCollection.create(
+      const { data: newCollectionEntry } = await collectionCollection.create(
         {
           systemId: collection.id,
           title: collection.title || "",
@@ -258,7 +260,11 @@ export default class StrapiModuleService {
           status: "draft",
         },
       );
+
+      return newCollectionEntry;
     }
+
+    return collectionEntry;
   }
 
   async deleteCollection(collectionId: string) {
@@ -312,7 +318,7 @@ export default class StrapiModuleService {
     );
 
     if (!categoryEntry) {
-      await categoryCollection.create(
+      const { data: newCategoryEntry } = await categoryCollection.create(
         {
           systemId: category.id,
           title: category.name || "",
@@ -324,7 +330,11 @@ export default class StrapiModuleService {
           status: "draft",
         },
       );
+
+      return newCategoryEntry;
     }
+
+    return categoryEntry;
   }
 
   async deleteCategory(categoryId: string) {

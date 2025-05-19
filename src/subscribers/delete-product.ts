@@ -9,13 +9,20 @@ export default async function handleProductDelete({
   container,
 }: SubscriberArgs<{ id: string }>) {
   const logger = container.resolve("logger");
-  await deleteProductsStrapiWorkflow(container).run({
-    input: {
-      product_ids: [data.id],
-    },
-  });
+  logger.log(`Deleting product ${data.id} in Strapi`);
 
-  logger.log("Product deleted in Strapi");
+  try {
+    await deleteProductsStrapiWorkflow(container).run({
+      input: {
+        product_ids: [data.id],
+      },
+    });
+
+    logger.log("Product deleted in Strapi");
+  } catch (error) {
+    logger.error(`Failed to delete product in Strapi: ${error.message}`);
+    throw error;
+  }
 }
 
 export const config: SubscriberConfig = {
