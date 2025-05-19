@@ -5,10 +5,7 @@ type CMSBody = {
   populate: string | string[] | Record<string, unknown> | undefined;
 };
 
-export const POST = async (
-  req: MedusaRequest<CMSBody>,
-  res: MedusaResponse,
-) => {
+export const GET = async (req: MedusaRequest<CMSBody>, res: MedusaResponse) => {
   const { id } = req.params;
   const { locale, fields } = req.query;
   const { populate } = req.body;
@@ -17,7 +14,10 @@ export const POST = async (
 
   const { data } = await query.graph({
     entity: "product_category",
-    fields: [...((fields as string) || "").split(","), "cms.*"],
+    fields: [
+      ...((fields as string) || "*").split(",").map((f) => f.trim()),
+      "cms.*",
+    ],
     filters: { id },
     context: {
       cms: QueryContext({
