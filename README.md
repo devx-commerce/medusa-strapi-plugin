@@ -50,21 +50,19 @@ yarn add @devx-commerce/strapi
 2. Add the plugin to your `medusa-config.js`:
 
 ```js
-const plugins = [
-  // ... other plugins
-  {
-    resolve: "@devx-commerce/strapi",
-    options: {
-      base_url: process.env.STRAPI_URL || "http://localhost:1337",
-      token: process.env.STRAPI_API_KEY,
+module.exports = defineConfig({
+  // ... other config
+  plugins: [
+    // ... other plugins,
+    {
+      resolve: "@devx-commerce/strapi",
+      options: {
+        base_url: process.env.STRAPI_URL,
+        api_key: process.env.STRAPI_API_KEY,
+      }
     }
-  }
-]
-
-module.exports = {
-  plugins,
-  // ... rest of your config
-}
+  ],
+});
 ```
 
 ## Setup

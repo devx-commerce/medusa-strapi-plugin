@@ -5,7 +5,7 @@ import { asValue } from "awilix";
 
 export type ModuleOptions = {
   base_url: string;
-  token: string;
+  api_key: string;
   default_locale?: string;
 };
 
@@ -13,10 +13,10 @@ export default async function syncContentModelsLoader({
   container,
   options,
 }: LoaderOptions<ModuleOptions>) {
-  if (!options?.base_url || !options?.token) {
+  if (!options?.base_url || !options?.api_key) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      "Strapi access token and baseURL are required",
+      "Strapi api key and base URL are required",
     );
   }
 
@@ -25,7 +25,7 @@ export default async function syncContentModelsLoader({
   try {
     const client = strapi({
       baseURL: options.base_url,
-      auth: options.token,
+      auth: options.api_key,
     });
 
     try {
