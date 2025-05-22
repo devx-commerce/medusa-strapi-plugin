@@ -1,6 +1,6 @@
 {
   "name": "@devx-commerce/strapi",
-  "version": "0.0.2-beta.1",
+  "version": "0.0.2",
   "description": "Medusa plugin for Strapi",
   "author": "devx commerce (https://devxcommerce.com)",
   "license": "MIT",
@@ -29,8 +29,6 @@
     "build": "medusa plugin:build",
     "dev": "medusa plugin:develop",
     "prepublishOnly": "medusa plugin:build",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "release": "yarn standard-version"
   },
   "devDependencies": {
@@ -52,7 +50,6 @@
     "@types/react-dom": "^18.2.25",
     "awilix": "^8.0.1",
     "pg": "^8.13.0",
-    "prettier": "^3.5.3",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -82,8 +79,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@strapi/client": "^1.4.0",
-    "axios": "^1.9.0"
+    "@strapi/client": "^1.4.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
