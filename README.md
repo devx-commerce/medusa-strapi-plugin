@@ -42,9 +42,9 @@ This plugin requires:
 1. Install the plugin:
 
 ```bash
-npm install @devx-commerce/strapi
+npm install @devx-commerce/strapi @strapi/client
 # or
-yarn add @devx-commerce/strapi
+yarn add @devx-commerce/strapi @strapi/client
 ```
 
 2. Add the plugin to your `medusa-config.js`:
