@@ -1,0 +1,28 @@
+# Build outputs
+/dist
+/.medusa
+/build
+/.cache
+
+# Dependencies
+/node_modules
+
+# Generated files
+yarn-error.log
+.DS_Store
+tsconfig.tsbuildinfo
+medusa-db.sql
+
+# Yarn files
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Environment files
+.env*
+
+# Coverage reports
+/coverage
