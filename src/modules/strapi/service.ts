@@ -24,6 +24,7 @@ const CATEGORY_COLLECTION_NAME = 'categories';
 const COLLECTION_COLLECTION_NAME = 'collections';
 
 const HEADER_SINGLE_TYPE_NAME = 'header';
+const FOOTER_SINGLE_TYPE_NAME = 'footer';
 
 export default class StrapiModuleService {
   private strapiClient: StrapiClient;
@@ -361,6 +362,20 @@ export default class StrapiModuleService {
     const header = await this.strapiClient.single(HEADER_SINGLE_TYPE_NAME);
 
     const { data } = await header.find({
+      locale: locale || this.options.default_locale,
+      populate,
+    });
+
+    return data;
+  }
+
+  async getFooter(
+    locale?: string,
+    populate?: string | string[] | Record<string, unknown> | undefined
+  ) {
+    const footer = await this.strapiClient.single(FOOTER_SINGLE_TYPE_NAME);
+
+    const { data } = await footer.find({
       locale: locale || this.options.default_locale,
       populate,
     });
