@@ -2,31 +2,40 @@ import { ProductDTO } from "@medusajs/framework/types";
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk";
 import { STRAPI_MODULE } from "../../modules/strapi";
 import StrapiModuleService from "../../modules/strapi/service";
+import { Modules } from "@medusajs/framework/utils";
 
 type EntryProps = {
   documentId: string;
-  systemId: string;
+  productId: string;
 };
 
 type StepInput = {
   products: ProductDTO[];
 };
 
-export const createProductsStrapiStep = createStep(
-  "create-products-strapi-step",
+export const upsertProductsStrapiStep = createStep(
+  "upsert-products-strapi-step",
   async (input: StepInput, { container }) => {
     const strapiModuleService: StrapiModuleService =
       container.resolve(STRAPI_MODULE);
+    const productModuleService = container.resolve(Modules.PRODUCT);
 
     const products: EntryProps[] = [];
 
     try {
       for (const product of input.products) {
-        products.push(
-          (await strapiModuleService.createProduct(
-            product,
-          )) as unknown as EntryProps,
-        );
+        const entry = await strapiModuleService.upsertProduct(product);
+        await productModuleService.updateProducts(product.id, {
+          metadata: {
+            ...product.metadata,
+            strapiId: entry.documentId,
+            strapiSyncedAt: new Date().valueOf(),
+          },
+        });
+        products.push({
+          documentId: entry.documentId,
+          productId: product.id,
+        });
       }
     } catch (e) {
       return StepResponse.permanentFailure(
@@ -36,17 +45,5 @@ export const createProductsStrapiStep = createStep(
     }
 
     return new StepResponse(products, products);
-  },
-  async (products, { container }) => {
-    if (!products) {
-      return;
-    }
-
-    const strapiModuleService: StrapiModuleService =
-      container.resolve(STRAPI_MODULE);
-
-    for (const product of products) {
-      await strapiModuleService.deleteProduct(product.systemId);
-    }
   },
 );

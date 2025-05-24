@@ -4,24 +4,24 @@ import {
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
-import { createCollectionStrapiStep } from "./steps/create-collections-strapi";
+import { upsertCollectionStrapiStep } from "./steps/upsert-collections-strapi";
 
 type WorkflowInput = {
   collection_ids: string[];
 };
 
-export const createCollectionsStrapiWorkflow = createWorkflow(
-  { name: "create-collection-strapi-workflow" },
+export const upsertCollectionsStrapiWorkflow = createWorkflow(
+  { name: "upsert-collection-strapi-workflow" },
   (input: WorkflowInput) => {
     const { data } = useQueryGraphStep({
       entity: "product_collection",
-      fields: ["id", "title", "handle"],
+      fields: ["id", "title", "handle", "metadata"],
       filters: {
         id: input.collection_ids,
       },
     });
 
-    const strapiCollections = createCollectionStrapiStep({
+    const strapiCollections = upsertCollectionStrapiStep({
       collections: data as ProductCollectionDTO[],
     });
 

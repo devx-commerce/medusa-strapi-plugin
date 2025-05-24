@@ -2,36 +2,41 @@ import { ProductVariantDTO } from "@medusajs/framework/types";
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk";
 import { STRAPI_MODULE } from "../../modules/strapi";
 import StrapiModuleService from "../../modules/strapi/service";
+import { Modules } from "@medusajs/framework/utils";
 
 type EntryProps = {
   documentId: string;
-  systemId: string;
+  variantId: string;
 };
 
 type StepInput = {
   variants: ProductVariantDTO[];
 };
 
-export const createProductVariantsStrapiStep = createStep(
-  "create-product-variants-strapi-step",
+export const upsertProductVariantsStrapiStep = createStep(
+  "upsert-product-variants-strapi-step",
   async (input: StepInput, { container }) => {
     const strapiModuleService: StrapiModuleService =
       container.resolve(STRAPI_MODULE);
+    const productModuleService = container.resolve(Modules.PRODUCT);
 
     const variants: EntryProps[] = [];
 
     try {
       for (const variant of input.variants) {
-        if (variant.product_id) {
-          const product = await strapiModuleService.getProductBySystemId(
-            variant.product_id,
-          );
-          variants.push(
-            (await strapiModuleService.createProductVariant(
-              [variant],
-              product,
-            )) as unknown as EntryProps,
-          );
+        const entry = await strapiModuleService.upsertProductVariant(variant);
+        if (entry) {
+          await productModuleService.updateProductVariants(variant.id, {
+            metadata: {
+              ...variant.metadata,
+              strapiId: entry.documentId,
+              strapiSyncedAt: new Date().valueOf(),
+            },
+          });
+          variants.push({
+            documentId: entry.documentId,
+            variantId: variant.id,
+          });
         }
       }
     } catch (e) {
@@ -42,17 +47,5 @@ export const createProductVariantsStrapiStep = createStep(
     }
 
     return new StepResponse(variants, variants);
-  },
-  async (variants, { container }) => {
-    if (!variants) {
-      return;
-    }
-
-    const strapiModuleService: StrapiModuleService =
-      container.resolve(STRAPI_MODULE);
-
-    for (const variant of variants) {
-      await strapiModuleService.deleteProductVariant(variant.systemId);
-    }
   },
 );

@@ -4,14 +4,14 @@ import { STRAPI_MODULE } from "../modules/strapi";
 
 export default defineLink(
   {
-    linkable: ProductModule.linkable.product,
+    linkable: ProductModule.linkable.productCollection,
     field: "id",
   },
   {
     linkable: {
       serviceName: STRAPI_MODULE,
-      alias: "cms",
-      primaryKey: "systemId",
+      alias: "cms_collection",
+      primaryKey: "collectionId",
     },
   },
   {

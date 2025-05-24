@@ -3,23 +3,23 @@ import {
   type SubscriberConfig,
 } from "@medusajs/framework";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
-import { deleteCollectionsStrapiWorkflow } from "../workflows/delete-collections-strapi";
+import { upsertCollectionsStrapiWorkflow } from "../workflows/upsert-collections-strapi";
 
-export default async function handleCollectionDelete({
+export default async function handleCollectionCreate({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string }>) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
 
-  await deleteCollectionsStrapiWorkflow(container).run({
+  await upsertCollectionsStrapiWorkflow(container).run({
     input: {
       collection_ids: [data.id],
     },
   });
 
-  logger.log("Collection deleted in Strapi");
+  logger.log("Collection updated in Strapi");
 }
 
 export const config: SubscriberConfig = {
-  event: "product-collection.deleted",
+  event: "product-collection.updated",
 };

@@ -87,12 +87,22 @@ npm run develop
    - Create a new full access token
    - Copy the token to use in your Medusa configuration
 
-4. Configure environment variables for your Medusa backend:
+4. Create Product and Variant collections in Strapi:
+   - In your Strapi admin panel, go to Content-Type Builder
+   - Create a new collection type called "Product"
+     - Add a "title" field (Text type)
+     - Add a "systemId" field (Text type, Unique)
+   - Create another collection type called "Variant"
+     - Add a "title" field (Text type)
+     - Add a "systemId" field (Text type, Unique)
+   - Save and publish your new collection types
 
-```
-STRAPI_URL=http://localhost:1337
-STRAPI_API_KEY=your-api-token-here
-```
+5. Configure environment variables for your Medusa backend:
+
+    ```
+    STRAPI_URL=http://localhost:1337
+    STRAPI_API_KEY=your-api-token-here
+    ```
 
 ### Synchronizing data
 
@@ -111,8 +121,7 @@ Example of fetching product content from Strapi:
 ```js
 // In your storefront
 async function getProductContent(productId) {
-  const response = await fetch(`${MEDUSA_BASE_URL}/store/cms/products/${productId}`, {
-    body: JSON.stringify({ populate: { variants: { fields: "*" } } }),
+  const response = await fetch(`${MEDUSA_BASE_URL}/store/products/${productId}?fields=cms_product.*`, {
     header: {
       "x-publishable-api-key": ${STOREFRONT_PUBLISHABLE_API_KEY}
     }

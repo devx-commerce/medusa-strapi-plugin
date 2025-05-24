@@ -1,12 +1,12 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
-import { createProductsStrapiWorkflow } from "../workflows/create-products-strapi";
+import { upsertProductsStrapiWorkflow } from "../workflows/upsert-products-strapi";
 
 export default async function syncProductsHandler({
   container,
 }: SubscriberArgs<Record<string, unknown>>) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
-  const logger = container.resolve("logger");
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
 
   const batchSize = 100;
   let hasMore = true;
@@ -24,7 +24,7 @@ export default async function syncProductsHandler({
     });
 
     if (products.length) {
-      await createProductsStrapiWorkflow(container).run({
+      await upsertProductsStrapiWorkflow(container).run({
         input: {
           product_ids: products.map((product) => product.id),
         },

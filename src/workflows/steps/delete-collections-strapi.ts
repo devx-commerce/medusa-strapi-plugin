@@ -12,7 +12,7 @@ export const deleteCollectionsStrapiStep = createStep(
     const strapiModuleService: StrapiModuleService =
       container.resolve(STRAPI_MODULE);
 
-    const collections: void[] = [];
+    const collections: (string | null)[] = [];
 
     try {
       for (const collection_id of input.collection_ids) {

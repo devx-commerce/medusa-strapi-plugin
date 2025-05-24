@@ -2,15 +2,16 @@ import {
   type SubscriberArgs,
   type SubscriberConfig,
 } from "@medusajs/framework";
-import { createProductsStrapiWorkflow } from "../workflows/create-products-strapi";
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
+import { upsertProductsStrapiWorkflow } from "../workflows/upsert-products-strapi";
 
 export default async function handleProductCreate({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string }>) {
-  const logger = container.resolve("logger");
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
 
-  await createProductsStrapiWorkflow(container).run({
+  await upsertProductsStrapiWorkflow(container).run({
     input: {
       product_ids: [data.id],
     },

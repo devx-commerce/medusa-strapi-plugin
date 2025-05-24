@@ -2,6 +2,7 @@ import { ProductCategoryDTO } from "@medusajs/framework/types";
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk";
 import { STRAPI_MODULE } from "../../modules/strapi";
 import StrapiModuleService from "../../modules/strapi/service";
+import { Modules } from "@medusajs/framework/utils";
 
 type EntryProps = {
   documentId: string;
@@ -12,21 +13,29 @@ type StepInput = {
   categories: ProductCategoryDTO[];
 };
 
-export const createCategoriesStrapiStep = createStep(
-  "create-categories-strapi-step",
+export const upsertCategoriesStrapiStep = createStep(
+  "upsert-categories-strapi-step",
   async (input: StepInput, { container }) => {
     const strapiModuleService: StrapiModuleService =
       container.resolve(STRAPI_MODULE);
+    const productModuleService = container.resolve(Modules.PRODUCT);
 
     const categories: EntryProps[] = [];
 
     try {
       for (const category of input.categories) {
-        categories.push(
-          (await strapiModuleService.createCategory(
-            category,
-          )) as unknown as EntryProps,
-        );
+        const entry = await strapiModuleService.upsertCategory(category);
+        await productModuleService.updateProductCategories(category.id, {
+          metadata: {
+            ...category.metadata,
+            strapiId: entry.documentId,
+            strapiSyncedAt: new Date().valueOf(),
+          },
+        });
+        categories.push({
+          documentId: entry.documentId,
+          categoryId: category.id,
+        });
       }
     } catch (e) {
       return StepResponse.permanentFailure(
@@ -36,17 +45,5 @@ export const createCategoriesStrapiStep = createStep(
     }
 
     return new StepResponse(categories, categories);
-  },
-  async (categories, { container }) => {
-    if (!categories) {
-      return;
-    }
-
-    const strapiModuleService: StrapiModuleService =
-      container.resolve(STRAPI_MODULE);
-
-    for (const category of categories) {
-      await strapiModuleService.deleteCategory(category.categoryId);
-    }
   },
 );

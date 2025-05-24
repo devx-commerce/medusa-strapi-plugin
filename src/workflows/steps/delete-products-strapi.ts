@@ -12,7 +12,7 @@ export const deleteProductsStrapiStep = createStep(
     const strapiModuleService: StrapiModuleService =
       container.resolve(STRAPI_MODULE);
 
-    const products: void[] = [];
+    const products: (string | null)[] = [];
 
     try {
       for (const product_id of input.product_ids) {

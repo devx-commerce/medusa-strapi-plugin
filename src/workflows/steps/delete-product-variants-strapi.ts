@@ -12,7 +12,7 @@ export const deleteProductVariantsStrapiStep = createStep(
     const strapiModuleService: StrapiModuleService =
       container.resolve(STRAPI_MODULE);
 
-    const variants: void[] = [];
+    const variants: (string | null)[] = [];
 
     try {
       for (const variant_id of input.variant_ids) {

@@ -1,12 +1,12 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
-import { createCategoriesStrapiWorkflow } from "../workflows/create-categories-strapi";
+import { upsertCategoriesStrapiWorkflow } from "../workflows/upsert-categories-strapi";
 
 export default async function syncCategoriesHandler({
   container,
 }: SubscriberArgs<Record<string, unknown>>) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
-  const logger = container.resolve("logger");
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
 
   const batchSize = 100;
   let hasMore = true;
@@ -24,7 +24,7 @@ export default async function syncCategoriesHandler({
     });
 
     if (categories.length) {
-      await createCategoriesStrapiWorkflow(container).run({
+      await upsertCategoriesStrapiWorkflow(container).run({
         input: {
           category_ids: categories.map((category) => category.id),
         },

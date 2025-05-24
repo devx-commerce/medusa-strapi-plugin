@@ -1,38 +1,41 @@
 import {
   Logger,
+  ProductCategoryDTO,
+  ProductCollectionDTO,
   ProductDTO,
   ProductVariantDTO,
-  ProductCollectionDTO,
-  ProductCategoryDTO,
 } from "@medusajs/framework/types";
 import { MedusaError } from "@medusajs/framework/utils";
 import { StrapiClient } from "@strapi/client";
 import { ModuleOptions } from "./loader/create-content-models";
 
 type InjectedDependencies = {
-  strapiClient: StrapiClient;
+  client: StrapiClient;
   logger: Logger;
 };
 
 type EntryProps = {
   documentId: string;
+  [key: string]: unknown;
 };
 
-const PRODUCT_COLLECTION_NAME = "products";
-const VARIANT_COLLECTION_NAME = "product-variants";
-const CATEGORY_COLLECTION_NAME = "categories";
-const COLLECTION_COLLECTION_NAME = "collections";
+enum StrapiEntity {
+  PRODUCT = "products",
+  VARIANT = "product-variants",
+  CATEGORY = "categories",
+  COLLECTION = "collections",
+}
 
 export default class StrapiModuleService {
-  private strapiClient: StrapiClient;
+  private client: StrapiClient;
   private options: ModuleOptions;
   protected logger: Logger;
 
   constructor(
-    { strapiClient, logger }: InjectedDependencies,
+    { client, logger }: InjectedDependencies,
     options: ModuleOptions,
   ) {
-    this.strapiClient = strapiClient;
+    this.client = client;
     this.logger = logger;
     this.options = {
       ...options,
@@ -40,315 +43,390 @@ export default class StrapiModuleService {
     };
   }
 
-  async getProductBySystemId(systemId: string) {
-    const productCollection = this.strapiClient.collection(
-      PRODUCT_COLLECTION_NAME,
-    );
-    const {
-      data: [product],
-    } = await productCollection.find({
-      filters: { systemId },
+  private async getEntityBySystemId(
+    entity: StrapiEntity,
+    systemId: string,
+    options?: Record<string, unknown>,
+  ): Promise<EntryProps | undefined> {
+    const collection = this.client.collection(entity);
+
+    const defaultOption: Record<string, unknown> = {
       fields: ["documentId"],
       status: "draft",
-    });
+      ...options,
+    };
 
-    return product;
+    const entry = await collection
+      .find({ ...defaultOption, filters: { systemId } })
+      .then((resp) => resp.data[0]);
+
+    return entry;
+  }
+
+  private async createEntry(
+    entity: StrapiEntity,
+    data: Record<string, string | undefined>,
+  ) {
+    const collection = this.client.collection(entity);
+
+    try {
+      const entry = await collection
+        .create(data, {
+          locale: this.options.default_locale,
+          status: "draft",
+        })
+        .then((resp) => resp.data);
+
+      return entry;
+    } catch (error) {
+      this.logger.error(`Failed to create ${entity} in Strapi`, error);
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Failed to create ${entity} in Strapi: ${error.message}`,
+      );
+    }
+  }
+
+  private async updateEntry(
+    entity: StrapiEntity,
+    documentId: string,
+    data: Record<string, string | undefined>,
+  ) {
+    const collection = this.client.collection(entity);
+
+    try {
+      const entry = await collection
+        .update(documentId, data, {
+          locale: this.options.default_locale,
+          status: "draft",
+        })
+        .then((resp) => resp.data);
+
+      return entry;
+    } catch (error) {
+      this.logger.error(`Failed to update ${entity} in Strapi`, error);
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Failed to update ${entity} in Strapi: ${error.message}`,
+      );
+    }
+  }
+
+  private async deleteEntry(entity: StrapiEntity, documentId: string) {
+    const collection = this.client.collection(entity);
+
+    try {
+      return await collection.delete(documentId);
+    } catch (error) {
+      this.logger.error(`Failed to update ${entity} in Strapi`, error);
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Failed to update ${entity} in Strapi: ${error.message}`,
+      );
+    }
   }
 
   async list(filter: {
-    systemId: string | string[];
+    productId?: string | string[];
+    collectionId?: string | string[];
+    categoryId?: string | string[];
     context?: {
-      entity?: "collection" | "product" | "category";
       locale?: string;
-      populate?: string;
     };
   }) {
-    this.logger.debug(JSON.stringify(filter));
+    this.logger.debug(`Fetching cms data `);
 
-    let collectionName = PRODUCT_COLLECTION_NAME;
-    if (filter.context?.entity === "collection") {
-      collectionName = COLLECTION_COLLECTION_NAME;
+    let entity = StrapiEntity.PRODUCT;
+    let systemKey = "productId";
+    let systemId = filter.productId;
+
+    if (filter.collectionId) {
+      entity = StrapiEntity.COLLECTION;
+      systemKey = "collectionId";
+      systemId = filter.collectionId;
     }
-    if (filter.context?.entity === "category") {
-      collectionName = CATEGORY_COLLECTION_NAME;
+    if (filter.categoryId) {
+      entity = StrapiEntity.CATEGORY;
+      systemKey = "categoryId";
+      systemId = filter.categoryId;
     }
 
-    const systemIdFilter = Array.isArray(filter.systemId)
-      ? filter.systemId
-      : [filter.systemId];
+    const systemIdFilter = Array.isArray(systemId) ? systemId : [systemId];
+    this.logger.debug(`Fetching entity ${entity} with ID: ${systemIdFilter}`);
 
-    const collection = this.strapiClient.collection(collectionName);
+    const collection = this.client.collection(entity);
 
-    const { data: entries } = await collection.find({
-      filters: {
-        systemId: { $in: systemIdFilter },
-      },
-      locale: filter.context?.locale || this.options.default_locale,
-      populate: filter.context?.populate,
+    const entries = await collection
+      .find({
+        filters: { systemId: { $in: systemIdFilter } },
+        locale: filter.context?.locale || this.options.default_locale,
+      })
+      .then((resp) => resp.data);
+
+    const listEntries = entries.map(({ systemId, ...rest }) => {
+      return {
+        ...rest,
+        [systemKey]: systemId,
+      };
     });
 
-    return entries;
+    return listEntries;
   }
 
-  async createProduct(product: ProductDTO) {
-    const productsCollection = this.strapiClient.collection(
-      PRODUCT_COLLECTION_NAME,
-    );
+  async upsertProduct(product: ProductDTO) {
+    this.logger.debug(`Creating product in Strapi ${product.id}`);
 
     // check if product already exists
-    let {
-      data: [productEntry],
-    } = await productsCollection.find({
-      filters: {
-        systemId: product.id,
-      },
-      status: "draft",
-    });
+    this.logger.debug(`Checking product in Strapi ${product.id}`);
+    const productEntry = await this.getEntityBySystemId(
+      StrapiEntity.PRODUCT,
+      product.id,
+    );
 
-    if (!productEntry) {
-      ({ data: productEntry } = await productsCollection.create(
-        {
-          systemId: product.id,
-          title: product.title || "",
-          handle: product.handle || "",
-          productType: product.type || "",
-        },
-        {
-          locale: this.options.default_locale,
-          status: "draft",
-        },
-      ));
+    let entry = productEntry;
+    if (!entry) {
+      this.logger.debug(
+        `No product in Strapi with ID: ${product.id}, creating it`,
+      );
+      entry = await this.createEntry(StrapiEntity.PRODUCT, {
+        systemId: product.id,
+        title: product.title || "",
+        handle: product.handle || "",
+        productType: product.type?.value || "",
+      });
+    } else {
+      this.logger.debug(`Updating product in Strapi with ID: ${product.id}`);
+      entry = await this.updateEntry(StrapiEntity.PRODUCT, entry.documentId, {
+        title: product.title || "",
+        handle: product.handle || "",
+        productType: product.type?.value || "",
+      });
     }
 
     // Create variants if they exist
     if (product.variants?.length) {
-      await this.createProductVariant(product.variants, productEntry);
+      this.logger.debug(`Creating product variants in Strapi ${product.id}`);
+      await this.upsertProductVariants(product.variants, entry);
     }
 
-    return productEntry;
+    return entry;
   }
 
   async deleteProduct(productId: string) {
-    const productsCollection = this.strapiClient.collection(
-      PRODUCT_COLLECTION_NAME,
+    this.logger.debug(`Deleting product in Strapi ${productId}`);
+
+    const productEntry = await this.getEntityBySystemId(
+      StrapiEntity.PRODUCT,
+      productId,
+      { populate: "variants", fields: ["*"] },
     );
 
-    const productVariantsCollection = this.strapiClient.collection(
-      VARIANT_COLLECTION_NAME,
-    );
+    if (!productEntry) {
+      this.logger.log(`No product found in Strapi ${productId}`);
+      return null;
+    }
 
-    try {
-      const {
-        data: [productEntry],
-      } = await productsCollection.find({
-        filters: { systemId: productId },
-        populate: "variants",
-        status: "draft",
-      });
+    await this.deleteEntry(StrapiEntity.PRODUCT, productEntry.documentId);
 
-      if (!productEntry) {
-        this.logger.log("No product found in Strapi");
-        return;
-      }
-
-      await productsCollection.delete(productEntry.documentId);
-
+    if (Array.isArray(productEntry.variants)) {
       // Delete the product variant entries
+      this.logger.debug(`Deleting product variants in Strapi ${productId}`);
       await Promise.all(
         productEntry.variants.map((v: EntryProps) =>
-          productVariantsCollection.delete(v.documentId),
+          this.deleteEntry(StrapiEntity.VARIANT, v.documentId),
         ),
       );
-    } catch (error) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        `Failed to delete product from Strapi: ${error.message}`,
-      );
     }
+
+    return productId;
   }
 
-  async createProductVariant(
+  private async upsertProductVariants(
     variants: ProductVariantDTO[],
     productEntry: EntryProps,
   ) {
-    const productVariantsCollection = this.strapiClient.collection(
-      VARIANT_COLLECTION_NAME,
-    );
-
     for (const variant of variants) {
-      // check if product variant already exists
-      const {
-        data: [productVariantEntry],
-      } = await productVariantsCollection.find({
-        filters: {
-          systemId: variant.id,
-        },
-        status: "draft",
-      });
+      this.logger.debug(`Fetching product variants in Strapi ${variant.id}`);
 
-      if (!productVariantEntry) {
-        await productVariantsCollection.create(
-          {
-            systemId: variant.id,
-            title: variant.title || "",
-            product: productEntry.documentId,
-            sku: variant.sku,
-          },
-          {
-            locale: this.options.default_locale,
-            status: "draft",
-          },
+      // check if product variant already exists
+      const entry = await this.getEntityBySystemId(
+        StrapiEntity.VARIANT,
+        variant.id,
+      );
+
+      if (!entry) {
+        this.logger.debug(
+          `No product variant found in Strapi with ID: ${variant.id}, creating it.`,
         );
+
+        await this.createEntry(StrapiEntity.VARIANT, {
+          systemId: variant.id,
+          title: variant.title || "",
+          product: productEntry.documentId,
+          sku: variant.sku || "",
+        });
+      } else {
+        this.logger.debug(
+          `Updating product variant found in Strapi with ID: ${variant.id}`,
+        );
+        await this.updateEntry(StrapiEntity.VARIANT, entry.documentId, {
+          title: variant.title || "",
+          product: productEntry.documentId,
+          sku: variant.sku || "",
+        });
       }
     }
+  }
+
+  async upsertProductVariant(variant: ProductVariantDTO) {
+    this.logger.debug(`Fetching product variants in Strapi ${variant.id}`);
+
+    // check if product variant exists
+    const entry = await this.getEntityBySystemId(
+      StrapiEntity.VARIANT,
+      variant.id,
+    );
+
+    if (!entry) {
+      this.logger.log(
+        `No product variant found in Strapi with ID: ${variant.id}, creating it`,
+      );
+
+      const productEntry = await this.getEntityBySystemId(
+        StrapiEntity.PRODUCT,
+        variant.product_id as string,
+      );
+
+      if (productEntry) {
+        return await this.createEntry(StrapiEntity.VARIANT, {
+          systemId: variant.id,
+          title: variant.title || "",
+          product: productEntry.documentId,
+          sku: variant.sku || "",
+        });
+      }
+
+      return null;
+    }
+
+    this.logger.debug(
+      `Updating product variant found in Strapi with ID: ${variant.id}`,
+    );
+
+    return await this.updateEntry(StrapiEntity.VARIANT, entry.documentId, {
+      title: variant.title || "",
+      sku: variant.sku || "",
+    });
   }
 
   async deleteProductVariant(variantId: string) {
-    const productVariantsCollection = this.strapiClient.collection(
-      VARIANT_COLLECTION_NAME,
+    this.logger.debug(`Deleting product variant in Strapi ${variantId}`);
+
+    const entry = await this.getEntityBySystemId(
+      StrapiEntity.VARIANT,
+      variantId,
     );
 
-    try {
-      const {
-        data: [productVariantEntry],
-      } = await productVariantsCollection.find({
-        filters: { systemId: variantId },
-        status: "draft",
-      });
-
-      if (!productVariantEntry) {
-        this.logger.log("No product variant found in Strapi");
-        return;
-      }
-
-      await productVariantsCollection.delete(productVariantEntry.documentId);
-    } catch (error) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        `Failed to delete product variant from Strapi: ${error.message}`,
-      );
+    if (!entry) {
+      this.logger.log(`No product variant found in Strapi ${variantId}`);
+      return null;
     }
+
+    await this.deleteEntry(StrapiEntity.VARIANT, entry.documentId);
+    return variantId;
   }
 
-  async createCollection(collection: ProductCollectionDTO) {
-    const collectionCollection = this.strapiClient.collection(
-      COLLECTION_COLLECTION_NAME,
+  async upsertCollection(collection: ProductCollectionDTO) {
+    this.logger.debug(`Fetching collection in Strapi ${collection.id}`);
+
+    const entry = await this.getEntityBySystemId(
+      StrapiEntity.COLLECTION,
+      collection.id,
     );
 
-    // check if collection already exists
-    let {
-      data: [collectionEntry],
-    } = await collectionCollection.find({
-      filters: {
-        systemId: collection.id,
-      },
-      status: "draft",
-    });
-
-    if (!collectionEntry) {
-      const { data: newCollectionEntry } = await collectionCollection.create(
-        {
-          systemId: collection.id,
-          title: collection.title || "",
-          handle: collection.handle || "",
-        },
-        {
-          locale: this.options.default_locale,
-          status: "draft",
-        },
+    if (!entry) {
+      this.logger.log(
+        `No collection found in Strapi with ID: ${collection.id}, creating it`,
       );
 
-      return newCollectionEntry;
+      return await this.createEntry(StrapiEntity.COLLECTION, {
+        systemId: collection.id,
+        title: collection.title || "",
+        handle: collection.handle || "",
+      });
     }
 
-    return collectionEntry;
+    this.logger.debug(
+      `Updating collection found in Strapi with ID: ${collection.id}`,
+    );
+
+    return await this.updateEntry(StrapiEntity.COLLECTION, entry.documentId, {
+      title: collection.title || "",
+      handle: collection.handle || "",
+    });
   }
 
   async deleteCollection(collectionId: string) {
-    const collectionCollection = this.strapiClient.collection(
-      COLLECTION_COLLECTION_NAME,
+    this.logger.debug(`Deleting collection in Strapi ${collectionId}`);
+
+    const entry = await this.getEntityBySystemId(
+      StrapiEntity.COLLECTION,
+      collectionId,
     );
 
-    try {
-      const {
-        data: [collectionEntry],
-      } = await collectionCollection.find({
-        filters: { systemId: collectionId },
-        status: "draft",
-      });
-
-      if (!collectionEntry) {
-        this.logger.log("No collection found in Strapi");
-        return;
-      }
-
-      await collectionCollection.delete(collectionEntry.documentId);
-    } catch (error) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        `Failed to delete collection from Strapi: ${error.message}`,
-      );
+    if (!entry) {
+      this.logger.log(`No collection found in Strapi ${collectionId}`);
+      return null;
     }
+
+    await this.deleteEntry(StrapiEntity.COLLECTION, entry.documentId);
+    return collectionId;
   }
 
-  async createCategory(category: ProductCategoryDTO) {
-    const categoryCollection = this.strapiClient.collection(
-      CATEGORY_COLLECTION_NAME,
+  async upsertCategory(category: ProductCategoryDTO) {
+    this.logger.debug(`Fetching category in Strapi ${category.id}`);
+
+    const entry = await this.getEntityBySystemId(
+      StrapiEntity.CATEGORY,
+      category.id,
     );
 
-    // check if category already exists
-    const {
-      data: [categoryEntry],
-    } = await categoryCollection.find({
-      filters: {
-        systemId: category.id,
-      },
-      status: "draft",
-    });
-
-    if (!categoryEntry) {
-      const { data: newCategoryEntry } = await categoryCollection.create(
-        {
-          systemId: category.id,
-          title: category.name || "",
-          handle: category.handle || "",
-        },
-        {
-          locale: this.options.default_locale,
-          status: "draft",
-        },
+    if (!entry) {
+      this.logger.log(
+        `No category found in Strapi with ID: ${category.id}, creating it`,
       );
 
-      return newCategoryEntry;
+      return await this.createEntry(StrapiEntity.CATEGORY, {
+        systemId: category.id,
+        title: category.name || "",
+        handle: category.handle || "",
+      });
     }
 
-    return categoryEntry;
+    this.logger.debug(
+      `Updating category found in Strapi with ID: ${category.id}`,
+    );
+
+    return await this.updateEntry(StrapiEntity.CATEGORY, entry.documentId, {
+      title: category.name || "",
+      handle: category.handle || "",
+    });
   }
 
   async deleteCategory(categoryId: string) {
-    const categoryCollection = this.strapiClient.collection(
-      CATEGORY_COLLECTION_NAME,
+    this.logger.debug(`Deleting category in Strapi ${categoryId}`);
+
+    const entry = await this.getEntityBySystemId(
+      StrapiEntity.CATEGORY,
+      categoryId,
     );
 
-    try {
-      const {
-        data: [categoryEntry],
-      } = await categoryCollection.find({
-        filters: { systemId: categoryId },
-        status: "draft",
-      });
-
-      if (!categoryEntry) {
-        this.logger.log("No category found in Strapi");
-        return;
-      }
-
-      await categoryCollection.delete(categoryEntry.documentId);
-    } catch (error) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        `Failed to delete category from Strapi: ${error.message}`,
-      );
+    if (!entry) {
+      this.logger.log(`No category found in Strapi ${categoryId}`);
+      return null;
     }
+
+    await this.deleteEntry(StrapiEntity.CATEGORY, entry.documentId);
+    return categoryId;
   }
 }

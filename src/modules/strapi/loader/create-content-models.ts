@@ -1,5 +1,8 @@
 import { LoaderOptions } from "@medusajs/framework/types";
-import { MedusaError } from "@medusajs/framework/utils";
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+} from "@medusajs/framework/utils";
 import { strapi } from "@strapi/client";
 import { asValue } from "awilix";
 
@@ -20,7 +23,7 @@ export default async function syncContentModelsLoader({
     );
   }
 
-  const logger = container.resolve("logger");
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
 
   try {
     const client = strapi({
@@ -47,7 +50,7 @@ export default async function syncContentModelsLoader({
       throw error;
     }
 
-    container.register({ strapiClient: asValue(client) });
+    container.register({ client: asValue(client) });
     logger.info("Connected to Strapi");
   } catch (error) {
     logger.error(`Failed to connect to Strapi: ${error}`);

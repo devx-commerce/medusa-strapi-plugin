@@ -2,14 +2,16 @@ import {
   type SubscriberArgs,
   type SubscriberConfig,
 } from "@medusajs/framework";
-import { createCollectionsStrapiWorkflow } from "../workflows/create-collections-strapi";
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
+import { upsertCollectionsStrapiWorkflow } from "../workflows/upsert-collections-strapi";
 
 export default async function handleCollectionCreate({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string }>) {
-  const logger = container.resolve("logger");
-  await createCollectionsStrapiWorkflow(container).run({
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+
+  await upsertCollectionsStrapiWorkflow(container).run({
     input: {
       collection_ids: [data.id],
     },
