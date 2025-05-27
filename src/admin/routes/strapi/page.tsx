@@ -6,7 +6,7 @@ import { sdk } from "../../lib/sdk";
 const StrapiSettingsPage = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
-      sdk.client.fetch("/admin/cms/sync", {
+      sdk.client.fetch("/admin/strapi/sync", {
         method: "POST",
       }),
     onSuccess: () => {
