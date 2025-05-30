@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7-beta.2](https://github.com/devx-commerce/plugin-strapi/compare/v0.0.7-beta.1...v0.0.7-beta.2) (2025-05-30)
+
 ### [0.0.7-beta.1](https://github.com/devx-commerce/plugin-strapi/compare/v0.0.7-beta.0...v0.0.7-beta.1) (2025-05-30)
 
 ### [0.0.7-beta.0](https://github.com/devx-commerce/plugin-strapi/compare/v0.0.6...v0.0.7-beta.0) (2025-05-28)
