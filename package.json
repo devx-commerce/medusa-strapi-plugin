@@ -1,7 +1,7 @@
 {
   "name": "@devx-commerce/strapi",
-  "version": "0.0.5",
-  "description": "Medusa plugin for Strapi",
+  "version": "0.0.7-beta.0",
+  "description": "Medusa plugin for Strapi as CMS",
   "author": "devx commerce (https://devxcommerce.com)",
   "license": "MIT",
   "files": [
