@@ -1,221 +1,221 @@
 name: Medusa Plugin Release Workflow
 
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
-        inputs:
-            release_type:
-                description: "Release type"
-                type: choice
-                options:
-                    - production
-                    - beta
-                required: true
-                default: "beta"
-            rollback_version:
-                description: "Rollback to specific version"
-                type: string
-                required: false
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Release type"
+        type: choice
+        options:
+          - production
+          - beta
+        required: true
+        default: "beta"
+      rollback_version:
+        description: "Rollback to specific version"
+        type: string
+        required: false
 
 permissions:
-    contents: write
-    packages: write
+  contents: write
+  packages: write
 
 jobs:
-    release-beta:
-        if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.release_type == 'beta')
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-                  token: ${{ secrets.GITHUB_TOKEN }}
+  release-beta:
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.release_type == 'beta')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  registry-url: "https://registry.npmjs.org/"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org/"
 
-            - name: Enable Corepack
-              run: corepack enable
+      - name: Enable Corepack
+        run: corepack enable
 
-            - name: Install Dependencies
-              run: yarn install
+      - name: Install Dependencies
+        run: npm install
 
-            - name: Set up Git Identity
-              run: |
-                  git config user.name "GitHub Actions"
-                  git config user.email "actions@github.com"
+      - name: Set up Git Identity
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
 
-            - name: Run Standard Version for Beta Release
-              run: yarn run standard-version --prerelease beta
+      - name: Run Standard Version for Beta Release
+        run: yarn run standard-version --prerelease beta
 
-            - name: Push Version Bump Changes
-              run: git push --follow-tags origin main
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push Version Bump Changes
+        run: git push --follow-tags origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Build Plugin
-              run: |
-                  npx medusa plugin:build
-                  # Verify build output
-                  ls -la .medusa/server
+      - name: Build Plugin
+        run: |
+          npx medusa plugin:build
+          # Verify build output
+          ls -la .medusa/server
 
-            - name: Publish to npm (Beta Release)
-              run: |
-                  echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-                  npm publish --tag beta --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm (Beta Release)
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          npm publish --tag beta --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    release-prod:
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type == 'production'
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  ref: main
+  release-prod:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type == 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  registry-url: "https://registry.npmjs.org/"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org/"
 
-            - name: Enable Corepack
-              run: corepack enable
+      - name: Enable Corepack
+        run: corepack enable
 
-            - name: Install Dependencies
-              run: yarn install
+      - name: Install Dependencies
+        run: npm install
 
-            - name: Set up Git Identity
-              run: |
-                  git config user.name "GitHub Actions"
-                  git config user.email "actions@github.com"
+      - name: Set up Git Identity
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
 
-            - name: Check Latest Published Version and Determine New Version
-              id: version
-              run: |
-                  # Get current version from package.json
-                  CURRENT_VERSION=$(node -p "require('./package.json').version")
-                  echo "Current version: $CURRENT_VERSION"
+      - name: Check Latest Published Version and Determine New Version
+        id: version
+        run: |
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
 
-                  # Get base version (remove beta suffix if present)
-                  BASE_VERSION=$(echo $CURRENT_VERSION | sed -E 's/-beta\.[0-9]+//')
-                  echo "Base version: $BASE_VERSION"
+          # Get base version (remove beta suffix if present)
+          BASE_VERSION=$(echo $CURRENT_VERSION | sed -E 's/-beta\.[0-9]+//')
+          echo "Base version: $BASE_VERSION"
 
-                  # Get latest published version
-                  PACKAGE_NAME=$(node -p "require('./package.json').name")
-                  LATEST_VERSION=$(npm view $PACKAGE_NAME version 2>/dev/null || echo "0.0.0")
-                  echo "Latest published version: $LATEST_VERSION"
+          # Get latest published version
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          LATEST_VERSION=$(npm view $PACKAGE_NAME version 2>/dev/null || echo "0.0.0")
+          echo "Latest published version: $LATEST_VERSION"
 
-                  # Determine if we need to bump the version
-                  if [[ "$(echo $LATEST_VERSION | grep -E '^'$BASE_VERSION'$')" != "" ]]; then
-                    # Latest version matches our base version, need to increment patch
-                    IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
-                    PATCH=$((PATCH + 1))
-                    NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-                    echo "Incrementing patch version to: $NEW_VERSION"
-                  else
-                    NEW_VERSION="$BASE_VERSION"
-                    echo "Using base version: $NEW_VERSION"
-                  fi
+          # Determine if we need to bump the version
+          if [[ "$(echo $LATEST_VERSION | grep -E '^'$BASE_VERSION'$')" != "" ]]; then
+            # Latest version matches our base version, need to increment patch
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+            echo "Incrementing patch version to: $NEW_VERSION"
+          else
+            NEW_VERSION="$BASE_VERSION"
+            echo "Using base version: $NEW_VERSION"
+          fi
 
-                  echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-            - name: Update Version and Changelog for Production
-              run: |
-                  # Update package.json with new version
-                  sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.new_version }}"/' package.json
+      - name: Update Version and Changelog for Production
+        run: |
+          # Update package.json with new version
+          sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.new_version }}"/' package.json
 
-                  # Generate changelog entry for the stable version
-                  yarn run standard-version --release-as ${{ steps.version.outputs.new_version }} --skip.bump --skip.tag
+          # Generate changelog entry for the stable version
+          yarn run standard-version --release-as ${{ steps.version.outputs.new_version }} --skip.bump --skip.tag
 
-                  # Commit version change
-                  git add package.json CHANGELOG.md
-                  git commit -m "Release stable version ${{ steps.version.outputs.new_version }}"
+          # Commit version change
+          git add package.json CHANGELOG.md
+          git commit -m "Release stable version ${{ steps.version.outputs.new_version }}"
 
-                  # Check if tag exists
-                  TAG_EXISTS=$(git tag -l "v${{ steps.version.outputs.new_version }}")
-                  if [ -z "$TAG_EXISTS" ]; then
-                    echo "Creating tag v${{ steps.version.outputs.new_version }}"
-                    git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
-                  else
-                    echo "Tag v${{ steps.version.outputs.new_version }} already exists, skipping tag creation"
-                  fi
+          # Check if tag exists
+          TAG_EXISTS=$(git tag -l "v${{ steps.version.outputs.new_version }}")
+          if [ -z "$TAG_EXISTS" ]; then
+            echo "Creating tag v${{ steps.version.outputs.new_version }}"
+            git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
+          else
+            echo "Tag v${{ steps.version.outputs.new_version }} already exists, skipping tag creation"
+          fi
 
-                  # Push changes and tags
-                  git push origin main
-                  git push origin --tags
+          # Push changes and tags
+          git push origin main
+          git push origin --tags
 
-            - name: Build Plugin
-              run: |
-                  npx medusa plugin:build
-                  # Verify build output
-                  ls -la .medusa/server
+      - name: Build Plugin
+        run: |
+          npx medusa plugin:build
+          # Verify build output
+          ls -la .medusa/server
 
-            - name: Verify package contents
-              run: |
-                  # This will create a tarball of what would be published
-                  npm pack
-                  # Extract and check contents
-                  mkdir -p /tmp/package-check
-                  tar -xzf *.tgz -C /tmp/package-check
-                  ls -la /tmp/package-check/package/.medusa || echo ".medusa directory missing!"
+      - name: Verify package contents
+        run: |
+          # This will create a tarball of what would be published
+          npm pack
+          # Extract and check contents
+          mkdir -p /tmp/package-check
+          tar -xzf *.tgz -C /tmp/package-check
+          ls -la /tmp/package-check/package/.medusa || echo ".medusa directory missing!"
 
-            - name: Publish to npm (Production Release)
-              run: |
-                  echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-                  npm publish --tag latest --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm (Production Release)
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          npm publish --tag latest --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-            - name: Create GitHub Release
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: v${{ steps.version.outputs.new_version }}
-                  name: v${{ steps.version.outputs.new_version }}
-                  body_path: CHANGELOG.md
-                  draft: false
-                  prerelease: false
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.new_version }}
+          name: v${{ steps.version.outputs.new_version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    rollback:
-        if: github.event_name == 'workflow_dispatch' && inputs.rollback_version != ''
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-                  token: ${{ secrets.GITHUB_TOKEN }}
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && inputs.rollback_version != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  registry-url: "https://registry.npmjs.org/"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org/"
 
-            - name: Enable Corepack
-              run: corepack enable
+      - name: Enable Corepack
+        run: corepack enable
 
-            - name: Get Package Name
-              id: package-name
-              run: |
-                  PACKAGE_NAME=$(node -p "require('./package.json').name")
-                  echo "name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+      - name: Get Package Name
+        id: package-name
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
 
-            - name: Rollback to Previous Version
-              run: |
-                  echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-                  yarn npm tag add ${{ steps.package-name.outputs.name }}@${{ inputs.rollback_version }} latest
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Rollback to Previous Version
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          yarn npm tag add ${{ steps.package-name.outputs.name }}@${{ inputs.rollback_version }} latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
