@@ -30,7 +30,10 @@ export default async function syncContentModelsLoader({
   try {
     const client = strapi({
       baseURL: options.base_url,
-      auth: options.api_key,
+      // auth: options.api_key,
+      headers: {
+        Authorization: `Bearer ${options.api_key}`,
+      },
     });
 
     const products = client.collection("products");
