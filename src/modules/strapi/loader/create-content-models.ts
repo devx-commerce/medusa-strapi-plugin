@@ -33,19 +33,19 @@ export default async function syncContentModelsLoader({
       auth: options.api_key,
     });
 
-    // const products = client.collection("products");
-    // await products.find({
-    //   fields: ["title", "systemId", "handle", "productType"],
-    //   populate: {
-    //     variants: {
-    //       fields: ["title", "systemId", "sku"],
-    //     },
-    //   },
-    //   pagination: {
-    //     limit: 1,
-    //     withCount: true,
-    //   },
-    // });
+    const products = client.collection("products");
+    await products.find({
+      fields: ["title", "systemId", "handle", "productType"],
+      populate: {
+        variants: {
+          fields: ["title", "systemId", "sku"],
+        },
+      },
+      pagination: {
+        limit: 1,
+        withCount: true,
+      },
+    });
 
     container.register({ client: asValue(client) });
     logger.info("Connected to Strapi");
