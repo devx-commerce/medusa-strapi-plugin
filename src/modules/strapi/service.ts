@@ -43,6 +43,22 @@ export default class StrapiModuleService {
     };
   }
 
+  static validateOptions(options: ModuleOptions) {
+    if (!options.base_url || !options.api_key) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Strapi base URL and API key are required",
+      );
+    }
+  }
+
+  /**
+   * Fetches an entity by its system ID.
+   * @param entity - The Strapi entity to fetch.
+   * @param systemId - The system ID of the entity.
+   * @param options - Additional options for the query.
+   * @returns The entry if found, otherwise undefined.
+   */
   private async getEntityBySystemId(
     entity: StrapiEntity,
     systemId: string,
@@ -63,6 +79,12 @@ export default class StrapiModuleService {
     return entry;
   }
 
+  /**
+   * Creates a new entry in the specified Strapi entity.
+   * @param entity - The Strapi entity to create an entry in.
+   * @param data - The data to create the entry with.
+   * @returns The created entry.
+   */
   private async createEntry(
     entity: StrapiEntity,
     data: Record<string, string | undefined>,
@@ -87,6 +109,13 @@ export default class StrapiModuleService {
     }
   }
 
+  /**
+   * Updates an existing entry in the specified Strapi entity.
+   * @param entity - The Strapi entity to update an entry in.
+   * @param documentId - The document ID of the entry to update.
+   * @param data - The data to update the entry with.
+   * @returns The updated entry.
+   */
   private async updateEntry(
     entity: StrapiEntity,
     documentId: string,
@@ -112,20 +141,31 @@ export default class StrapiModuleService {
     }
   }
 
+  /**
+   * Deletes an entry in the specified Strapi entity.
+   * @param entity - The Strapi entity to delete an entry from.
+   * @param documentId - The document ID of the entry to delete.
+   * @returns The result of the deletion operation.
+   */
   private async deleteEntry(entity: StrapiEntity, documentId: string) {
     const collection = this.client.collection(entity);
 
     try {
       return await collection.delete(documentId);
     } catch (error) {
-      this.logger.error(`Failed to update ${entity} in Strapi`, error);
+      this.logger.error(`Failed to delete ${entity} in Strapi`, error);
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        `Failed to update ${entity} in Strapi: ${error.message}`,
+        `Failed to delete ${entity} in Strapi: ${error.message}`,
       );
     }
   }
 
+  /**
+   * Lists entities based on the provided filter.
+   * @param filter - The filter criteria for listing entities.
+   * @returns A list of entries matching the filter criteria.
+   */
   async list(filter: {
     productId?: string | string[];
     collectionId?: string | string[];
@@ -173,6 +213,13 @@ export default class StrapiModuleService {
     return listEntries;
   }
 
+  /**
+   * Upserts a product in Strapi.
+   * If the product does not exist, it creates a new entry.
+   * If it exists, it updates the existing entry.
+   * @param product - The product data to upsert.
+   * @returns The created or updated product entry.
+   */
   async upsertProduct(product: ProductDTO) {
     this.logger.debug(`Creating product in Strapi ${product.id}`);
 
@@ -212,6 +259,12 @@ export default class StrapiModuleService {
     return entry;
   }
 
+  /**
+   * Deletes a product in Strapi.
+   * It also deletes all associated product variants.
+   * @param productId - The ID of the product to delete.
+   * @returns The ID of the deleted product or null if not found.
+   */
   async deleteProduct(productId: string) {
     this.logger.debug(`Deleting product in Strapi ${productId}`);
 
@@ -241,6 +294,13 @@ export default class StrapiModuleService {
     return productId;
   }
 
+  /**
+   * Upserts product variants for a given product entry.
+   * If the variant does not exist, it creates a new entry.
+   * If it exists, it updates the existing entry.
+   * @param variants - The product variants to upsert.
+   * @param productEntry - The product entry to associate the variants with.
+   */
   private async upsertProductVariants(
     variants: ProductVariantDTO[],
     productEntry: EntryProps,
@@ -278,6 +338,13 @@ export default class StrapiModuleService {
     }
   }
 
+  /**
+   * Upserts a product variant in Strapi.
+   * If the variant does not exist, it creates a new entry.
+   * If it exists, it updates the existing entry.
+   * @param variant - The product variant data to upsert.
+   * @returns The created or updated product variant entry.
+   */
   async upsertProductVariant(variant: ProductVariantDTO) {
     this.logger.debug(`Fetching product variants in Strapi ${variant.id}`);
 
@@ -319,6 +386,11 @@ export default class StrapiModuleService {
     });
   }
 
+  /**
+   * Deletes a product variant in Strapi.
+   * @param variantId - The ID of the product variant to delete.
+   * @returns The ID of the deleted product variant or null if not found.
+   */
   async deleteProductVariant(variantId: string) {
     this.logger.debug(`Deleting product variant in Strapi ${variantId}`);
 
@@ -336,6 +408,13 @@ export default class StrapiModuleService {
     return variantId;
   }
 
+  /**
+   * Upserts a collection in Strapi.
+   * If the collection does not exist, it creates a new entry.
+   * If it exists, it updates the existing entry.
+   * @param collection - The collection data to upsert.
+   * @returns The created or updated collection entry.
+   */
   async upsertCollection(collection: ProductCollectionDTO) {
     this.logger.debug(`Fetching collection in Strapi ${collection.id}`);
 
@@ -366,6 +445,11 @@ export default class StrapiModuleService {
     });
   }
 
+  /**
+   * Deletes a collection in Strapi.
+   * @param collectionId - The ID of the collection to delete.
+   * @returns The ID of the deleted collection or null if not found.
+   */
   async deleteCollection(collectionId: string) {
     this.logger.debug(`Deleting collection in Strapi ${collectionId}`);
 
@@ -383,6 +467,13 @@ export default class StrapiModuleService {
     return collectionId;
   }
 
+  /**
+   * Upserts a product category in Strapi.
+   * If the category does not exist, it creates a new entry.
+   * If it exists, it updates the existing entry.
+   * @param category - The product category data to upsert.
+   * @returns The created or updated product category entry.
+   */
   async upsertCategory(category: ProductCategoryDTO) {
     this.logger.debug(`Fetching category in Strapi ${category.id}`);
 
@@ -413,6 +504,11 @@ export default class StrapiModuleService {
     });
   }
 
+  /**
+   * Deletes a product category in Strapi.
+   * @param categoryId - The ID of the product category to delete.
+   * @returns The ID of the deleted product category or null if not found.
+   */
   async deleteCategory(categoryId: string) {
     this.logger.debug(`Deleting category in Strapi ${categoryId}`);
 
