@@ -189,7 +189,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   rollback:
-    if: github.event_name == 'workflow_dispatch' && inputs.rollback_version != ''
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback_version != ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -216,6 +216,6 @@ jobs:
       - name: Rollback to Previous Version
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          yarn npm tag add ${{ steps.package-name.outputs.name }}@${{ inputs.rollback_version }} latest
+          npm dist-tag add ${{ steps.package-name.outputs.name }}@${{ github.event.inputs.rollback_version }} latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

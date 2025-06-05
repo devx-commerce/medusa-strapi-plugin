@@ -5,7 +5,7 @@ import {
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import { upsertProductVariantsStrapiWorkflow } from "../workflows/upsert-product-variants-strapi";
 
-export default async function handleProductVariantCreate({
+export default async function handleProductVariantUpdate({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string }>) {
