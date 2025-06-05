@@ -35,12 +35,21 @@ export default async function syncContentModelsLoader({
     pagination: { limit: 1 },
   });
 
-  const { error } = await fetch(`${options.base_url}/products?${params}`, {
+  const response = await fetch(`${options.base_url}/products?${params}`, {
     headers: {
       Authorization: `Bearer ${options.api_key}`,
       "Content-Type": "application/json",
     },
-  }).then((response) => response.json());
+  });
+
+  if (!response.ok) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `Failed to connect to Strapi: HTTP ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const { error } = await response.json();
 
   if (error) {
     throw new MedusaError(

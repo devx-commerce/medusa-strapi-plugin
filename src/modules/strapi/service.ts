@@ -38,7 +38,7 @@ export default class StrapiModuleService {
       system_id_key: options.system_id_key || "systemId",
     };
 
-    this.systemIdKey = this.options.system_id_key || "systemId";
+    this.systemIdKey = (this.options.system_id_key ?? "systemId").trim();
   }
 
   static validateOptions(options: ModuleOptions) {
@@ -67,16 +67,13 @@ export default class StrapiModuleService {
         ...options,
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+
       const { data, error } = await response.json();
 
       if (error) {
-        console.log(
-          "Strapi API error:",
-          options.method || "GET",
-          url,
-          JSON.stringify(options),
-        );
-        console.log("Strapi API error:", error);
         throw new Error(error.message || "Unknown error");
       }
 
@@ -240,6 +237,13 @@ export default class StrapiModuleService {
     const systemIdFilter = Array.isArray(systemId) ? systemId : [systemId];
     this.logger.debug(`Fetching entity ${entity} with ID: ${systemIdFilter}`);
 
+    if (!systemIdFilter.length) {
+      this.logger.debug(
+        `No system IDs provided for ${entity}, returning empty array`,
+      );
+      return [];
+    }
+
     const params = qs.stringify({
       filters: { [this.systemIdKey]: { $in: systemIdFilter } },
       // locale: filter.context?.locale || this.options.default_locale,
@@ -360,7 +364,12 @@ export default class StrapiModuleService {
         variant.product_id as string,
       );
 
-      if (!productEntry) return null;
+      if (!productEntry) {
+        this.logger.log(
+          `No product found in Strapi (ID: ${variant.product_id}) — skipping creation of variant ${variant.id}`,
+        );
+        return null;
+      }
 
       return await this.createEntry(StrapiEntity.VARIANT, {
         [this.systemIdKey]: variant.id,
