@@ -3,19 +3,21 @@ import {
   ContainerRegistrationKeys,
   MedusaError,
 } from "@medusajs/framework/utils";
-import { strapi } from "@strapi/client";
-import { asValue } from "awilix";
+import qs from "qs";
 
 export type ModuleOptions = {
   base_url: string;
   api_key: string;
   default_locale?: string;
+  system_id_key?: string;
 };
 
 export default async function syncContentModelsLoader({
   container,
   options,
 }: LoaderOptions<ModuleOptions>) {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+
   if (!options?.base_url || !options?.api_key) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
@@ -23,45 +25,38 @@ export default async function syncContentModelsLoader({
     );
   }
 
-  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+  const systemIdKey = options.system_id_key || "systemId";
 
   logger.debug(`Strapi baseURL: ${options.base_url}`);
 
-  try {
-    const client = strapi({
-      baseURL: options.base_url,
-      auth: options.api_key,
-      headers: {
-        Authorization: `Bearer ${options.api_key}`,
-        "x-devx-token": `Hello world`,
-      },
-    });
+  const params = qs.stringify({
+    fields: ["title", systemIdKey, "handle", "productType"],
+    populate: { variants: { fields: ["title", systemIdKey, "sku"] } },
+    pagination: { limit: 1 },
+  });
 
-    await fetch(`${options.base_url}`, {
-      headers: {
-        Authorization: `Bearer ${options.api_key}`,
-        "x-devx-token": `Hello world`,
-      },
-    });
+  const response = await fetch(`${options.base_url}/products?${params}`, {
+    headers: {
+      Authorization: `Bearer ${options.api_key}`,
+      "Content-Type": "application/json",
+    },
+  });
 
-    // const products = client.collection("products");
-    // await products.find({
-    //   fields: ["title", "systemId", "handle", "productType"],
-    //   populate: {
-    //     variants: {
-    //       fields: ["title", "systemId", "sku"],
-    //     },
-    //   },
-    //   pagination: {
-    //     limit: 1,
-    //     withCount: true,
-    //   },
-    // });
-
-    container.register({ client: asValue(client) });
-    logger.info("Connected to Strapi");
-  } catch (error) {
-    logger.error(`Failed to connect to Strapi: ${error}`);
-    throw error;
+  if (!response.ok) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `Failed to connect to Strapi: HTTP ${response.status} ${response.statusText}`,
+    );
   }
+
+  const { error } = await response.json();
+
+  if (error) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `Failed to connect to Strapi: ${error.message}`,
+    );
+  }
+
+  logger.info("Connected to Strapi");
 }
