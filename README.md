@@ -34,7 +34,7 @@
 This plugin requires:
 
 - [Medusa](https://docs.medusajs.com/) version >= 2.8.0
-- [Strapi v5](https://strapi.io/documentation/developer-docs/latest/getting-started/introduction.html)
+- [Strapi v5](https://docs.strapi.io/) (latest stable)
 
 ## Installation
 
@@ -49,6 +49,8 @@ yarn add @devx-commerce/strapi @strapi/client
 2. Add the plugin to your `medusa-config.js`:
 
 ```js
+const { defineConfig } = require("@medusajs/medusa"); // or "@medusajs/framework/utils"
+
 module.exports = defineConfig({
   // ... other config
   plugins: [
@@ -58,8 +60,8 @@ module.exports = defineConfig({
       options: {
         base_url: process.env.STRAPI_URL,
         api_key: process.env.STRAPI_API_KEY,
-      }
-    }
+      },
+    },
   ],
 });
 ```
@@ -82,50 +84,63 @@ npm run develop
 ```
 
 3. Create an API token in Strapi:
-   - Go to Settings > API Tokens
+
+   - Go to **Settings > API Tokens**
    - Create a new full access token
    - Copy the token to use in your Medusa configuration
 
 4. Create Product and Variant collections in Strapi:
-   - In your Strapi admin panel, go to Content-Type Builder
-   - Create a new collection type called "Product"
-     - Add a "title" field (Text type)
-     - Add a "systemId" field (Text type, Unique)
-   - Create another collection type called "Variant"
-     - Add a "title" field (Text type)
-     - Add a "systemId" field (Text type, Unique)
+
+   - In your Strapi admin panel, go to **Content-Type Builder**
+   - Create a new collection type called **Product**
+     - Add a **title** field (Text type)
+     - Add a **systemId** field (Text type, Unique)
+   - Create another collection type called **Variant**
+     - Add a **title** field (Text type)
+     - Add a **systemId** field (Text type, Unique)
    - Save and publish your new collection types
 
 5. Configure environment variables for your Medusa backend:
 
-    ```
-    STRAPI_URL=http://localhost:1337
-    STRAPI_API_KEY=your-api-token-here
-    ```
+   ```
+   STRAPI_URL=http://localhost:1337
+   STRAPI_API_KEY=your-api-token-here
+   ```
 
 ### Synchronizing data
 
 After installation and setup, the plugin will automatically:
 
-- Create and update products, collection & categories in Strapi when they are modified in Medusa
-- Sync product, collection & categories metadata between Medusa and Strapi
+- Create and update products, collections & categories in Strapi when they are modified in Medusa
+- Sync product, collection & category metadata between Medusa and Strapi
 - Allow extending product data with Strapi's content types
 
 ## Usage
 
 Once the plugin is set up, you can use Strapi's admin panel to add rich content to your products and use the Strapi API to fetch this content for your storefront.
 
-Example of fetching product content from Strapi:
+Example of fetching product content from Medusa (with Strapi fields):
 
 ```js
 // In your storefront
 async function getProductContent(productId) {
-  const response = await fetch(`${MEDUSA_BASE_URL}/store/products/${productId}?fields=cms_product.*`, {
-    header: {
-      "x-publishable-api-key": ${STOREFRONT_PUBLISHABLE_API_KEY}
-    }
-  });
+  const response = await fetch(
+    `${MEDUSA_BASE_URL}/store/products/${productId}?fields=cms_product.*`,
+    {
+      headers: {
+        "x-publishable-api-key": STOREFRONT_PUBLISHABLE_API_KEY,
+      },
+    },
+  );
   const data = await response.json();
   return data.data[0];
 }
 ```
+
+## Documentation
+
+- [Medusa Documentation](https://docs.medusajs.com)
+- [Strapi Documentation](https://docs.strapi.io)
+- [Plugin Guide](./src/)
+
+---
