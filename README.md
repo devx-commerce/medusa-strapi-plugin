@@ -103,7 +103,7 @@ npm run develop
 5. Configure environment variables for your Medusa backend:
 
    ```
-   STRAPI_URL=http://localhost:1337
+   STRAPI_URL=http://localhost:1337/api
    STRAPI_API_KEY=your-api-token-here
    ```
 
