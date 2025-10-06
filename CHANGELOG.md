@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.12](https://github.com/devx-commerce/medusa-strapi-plugin/compare/v0.0.12-beta.0...v0.0.12) (2025-10-06)
+
+
+### Features
+
+* enhance Strapi integration with new content type schemas and improved error handling ([296b5b6](https://github.com/devx-commerce/medusa-strapi-plugin/commit/296b5b69ddf3275479338e2c3a2f93bcb114b0d3))
+
+
+### Bug Fixes
+
+* update STRAPI_URL in README and remove npm-publish workflow ([9945755](https://github.com/devx-commerce/medusa-strapi-plugin/commit/99457559431be7ecffc1646d1f2445584d27fbe8))
+
 ### 0.0.12-beta.0 (2025-09-02)
 
 ### [0.0.11](https://github.com/devx-commerce/plugin-strapi/compare/v0.0.11-beta.0...v0.0.11) (2025-06-18)
