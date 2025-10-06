@@ -21,9 +21,13 @@ export const upsertProductVariantsStrapiStep = createStep(
     const productModuleService = container.resolve(Modules.PRODUCT);
 
     const variants: EntryProps[] = [];
+    const originalMetadata: Record<string, any> = {};
 
     try {
       for (const variant of input.variants) {
+        // Store original metadata for compensation
+        originalMetadata[variant.id] = variant.metadata;
+
         const entry = await strapiModuleService.upsertProductVariant(variant);
         if (entry) {
           await productModuleService.updateProductVariants(variant.id, {
@@ -42,10 +46,38 @@ export const upsertProductVariantsStrapiStep = createStep(
     } catch (e) {
       return StepResponse.permanentFailure(
         `Error creating variants in Strapi: ${e.message}`,
-        variants,
+        { variants, originalMetadata },
       );
     }
 
-    return new StepResponse(variants, variants);
+    return new StepResponse(variants, { variants, originalMetadata });
+  },
+  async (compensateInput, { container }) => {
+    if (!compensateInput) return;
+
+    const { variants, originalMetadata } = compensateInput;
+    const strapiModuleService: StrapiModuleService =
+      container.resolve(STRAPI_MODULE);
+    const productModuleService = container.resolve(Modules.PRODUCT);
+
+    // Revert metadata changes and delete created entries
+    for (const variant of variants) {
+      try {
+        // Revert metadata to original state
+        if (originalMetadata[variant.variantId]) {
+          await productModuleService.updateProductVariants(variant.variantId, {
+            metadata: originalMetadata[variant.variantId],
+          });
+        }
+
+        // Delete the Strapi entry if it was created
+        await strapiModuleService.deleteProductVariant(variant.variantId);
+      } catch (error) {
+        console.error(
+          `Failed to compensate variant ${variant.variantId}:`,
+          error,
+        );
+      }
+    }
   },
 );

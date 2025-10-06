@@ -68,13 +68,32 @@ export default class StrapiModuleService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        let errorDetails = `HTTP ${response.status} ${response.statusText}`;
+        try {
+          const errorResponse = await response.json();
+          if (errorResponse.error) {
+            errorDetails += ` - ${JSON.stringify(errorResponse.error)}`;
+            this.logger.error(
+              `Strapi API request failed for ${url}:`,
+              errorResponse,
+            );
+          }
+        } catch (parseError) {
+          this.logger.error(
+            "Failed to parse error response from Strapi",
+            parseError,
+          );
+        }
+        throw new Error(errorDetails);
       }
 
-      const { data, error } = await response.json();
+      const responseData = await response.json();
+      const { data, error } = responseData;
 
       if (error) {
-        throw new Error(error.message || "Unknown error");
+        this.logger.error(`Strapi API returned error for ${url}:`, error);
+        this.logger.error("Full response:", responseData);
+        throw new Error(error.message || JSON.stringify(error));
       }
 
       return data as T;

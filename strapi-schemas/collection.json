@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "collections",
+  "info": {
+    "singularName": "collection",
+    "pluralName": "collections",
+    "displayName": "Collection"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "systemId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "handle": {
+      "type": "string",
+      "required": false
+    }
+  }
+}
